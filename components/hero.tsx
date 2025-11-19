@@ -12,7 +12,7 @@ export function Hero() {
   const { scrollY } = useScroll()
   const y1 = useTransform(scrollY, [0, 300], [0, 100])
   const y2 = useTransform(scrollY, [0, 300], [0, -100])
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme()
 
   return (
     <section className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden px-4 py-20">
@@ -92,7 +92,7 @@ export function Hero() {
             className="relative w-72 h-72 md:w-96 md:h-96 rounded-2xl overflow-hidden border-4 border-background shadow-2xl ring-4 ring-primary/10 hover:ring-primary/20 transition-all duration-300"
           >
             <Image
-              src={theme === "dark" ? "/images/profilepic2.png" : "/images/profilepic.png"}
+              src={resolvedTheme === "dark" ? "/images/profilepic2.png" : "/images/profilepic.png"}
               alt="Pau López Núñez - Mobile Developer"
               fill
               className="object-cover"
