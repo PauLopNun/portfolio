@@ -23,9 +23,10 @@ const SkillIcon = ({ name, className }: { name: string; className?: string }) =>
             className={className}
           />
           <img
-            src="https://cdn.simpleicons.org/dart/0175C2"
+            src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/dart/dart-original.svg"
             alt="Dart"
             className={className}
+            style={{ filter: 'none' }}
           />
         </div>
       )
@@ -59,14 +60,16 @@ const SkillIcon = ({ name, className }: { name: string; className?: string }) =>
       return (
         <div className="flex gap-1 justify-center">
           <img
-            src="https://cdn.simpleicons.org/firebase/FFCA28"
+            src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/firebase/firebase-original.svg"
             alt="Firebase"
             className={className}
+            style={{ filter: 'none' }}
           />
           <img
-            src="https://cdn.simpleicons.org/amazonwebservices/FF9900"
+            src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg"
             alt="AWS"
             className={className}
+            style={{ filter: 'none' }}
           />
         </div>
       )
