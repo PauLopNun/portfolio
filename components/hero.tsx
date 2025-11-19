@@ -7,12 +7,19 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTheme } from "next-themes"
+import { useState, useEffect } from "react"
 
 export function Hero() {
   const { scrollY } = useScroll()
   const y1 = useTransform(scrollY, [0, 300], [0, 100])
   const y2 = useTransform(scrollY, [0, 300], [0, -100])
   const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Esperar a que el componente esté montado en el cliente
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <section className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden px-4 py-20">
@@ -86,18 +93,20 @@ export function Hero() {
           className="order-1 md:order-2 flex justify-center relative"
         >
           {/* Added floating animation to profile picture */}
-          <motion.div 
+          <motion.div
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             className="relative w-72 h-72 md:w-96 md:h-96 rounded-2xl overflow-hidden border-4 border-background shadow-2xl ring-4 ring-primary/10 hover:ring-primary/20 transition-all duration-300"
           >
-            <Image
-              src={resolvedTheme === "dark" ? "/portfolio/images/profilepic2.png" : "/portfolio/images/profilepic.png"}
-              alt="Pau López Núñez - Mobile Developer"
-              fill
-              className="object-cover"
-              priority
-            />
+            {mounted && (
+              <Image
+                src={resolvedTheme === "dark" ? "/portfolio/images/profilepic2.png" : "/portfolio/images/profilepic.png"}
+                alt="Pau López Núñez - Mobile Developer"
+                fill
+                className="object-cover"
+                priority
+              />
+            )}
           </motion.div>
           {/* Decorative gradient */}
           <div className="absolute -z-10 inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent rounded-2xl blur-3xl scale-110" />
