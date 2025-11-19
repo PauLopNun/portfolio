@@ -13,7 +13,9 @@
 
 ### 📸 Vista Previa
 
-[![Portfolio Preview](.github/assets/preview.png)](https://paulopnun.github.io/portfolio/)
+[![Portfolio Preview Light Mode](.github/assets/paulopnun.github.io_portfolio_light.png)](https://paulopnun.github.io/portfolio/)
+
+[![Portfolio Preview Dark Mode](.github/assets/paulopnun.github.io_portfolio_dark.png)](https://paulopnun.github.io/portfolio/)
 
 > 👆 **Haz clic en la imagen para ver el portfolio en vivo**
 
