@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 Portfolio Personal
+# Portfolio Personal
 
 ### Pau López Núñez
 
