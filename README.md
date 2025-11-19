@@ -13,7 +13,7 @@
 
 ### 📸 Vista Previa
 
-[![Portfolio Preview](https://via.placeholder.com/800x400/0F172A/38BDF8?text=Haz+clic+para+ver+el+Portfolio+→)](https://paulopnun.github.io/portfolio/)
+[![Portfolio Preview](.github/assets/preview.png)](https://paulopnun.github.io/portfolio/)
 
 > 👆 **Haz clic en la imagen para ver el portfolio en vivo**
 
