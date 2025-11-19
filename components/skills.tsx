@@ -17,15 +17,15 @@ const SkillIcon = ({ name, className }: { name: string; className?: string }) =>
     case "Flutter / Dart":
       return (
         <div className="flex gap-1 justify-center">
-          <img 
-            src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flutter/flutter-original.svg" 
-            alt="Flutter" 
-            className={className} 
+          <img
+            src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flutter/flutter-original.svg"
+            alt="Flutter"
+            className={className}
           />
-          <img 
-            src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/dart/dart-original.svg" 
-            alt="Dart" 
-            className={`${className} dark:invert`} 
+          <img
+            src="https://cdn.simpleicons.org/dart/0175C2"
+            alt="Dart"
+            className={className}
           />
         </div>
       )
@@ -58,15 +58,15 @@ const SkillIcon = ({ name, className }: { name: string; className?: string }) =>
     case "Firebase / AWS":
       return (
         <div className="flex gap-1 justify-center">
-          <img 
-            src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/firebase/firebase-plain.svg" 
-            alt="Firebase" 
-            className={`${className} dark:invert`} 
+          <img
+            src="https://cdn.simpleicons.org/firebase/FFCA28"
+            alt="Firebase"
+            className={className}
           />
-          <img 
-            src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/amazonwebservices/amazonwebservices-original-wordmark.svg" 
-            alt="AWS" 
-            className={`${className} dark:invert`} 
+          <img
+            src="https://cdn.simpleicons.org/amazonwebservices/FF9900"
+            alt="AWS"
+            className={className}
           />
         </div>
       )
