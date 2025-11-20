@@ -57,35 +57,6 @@
 
 ---
 
-## 💻 Desarrollo Local
-
-```bash
-# Clonar el repositorio
-git clone https://github.com/PauLopNun/portfolio.git
-cd portfolio
-
-# Instalar dependencias
-npm install --legacy-peer-deps
-
-# Ejecutar servidor de desarrollo
-npm run dev
-```
-
-Abre [http://localhost:3000/portfolio](http://localhost:3000/portfolio) en tu navegador.
-
----
-
-## 🏗️ Build de Producción
-
-```bash
-# Construir para producción
-npm run build
-
-# Los archivos estáticos se generan en la carpeta out/
-```
-
----
-
 ## 🚀 Deployment
 
 Este proyecto se despliega automáticamente en **GitHub Pages** mediante GitHub Actions.
