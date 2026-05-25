@@ -22,10 +22,10 @@ export function Navbar() {
   }, [])
 
   const navLinks = [
-    { href: "#skills", label: "Habilidades" },
-    { href: "#experience", label: "Trayectoria" },
-    { href: "#projects", label: "Proyectos" },
-    { href: "#contact", label: "Contacto" },
+    { href: "#skills", label: "Stack" },
+    { href: "#experience", label: "Experience" },
+    { href: "#projects", label: "Projects" },
+    { href: "#contact", label: "Contact" },
   ]
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {

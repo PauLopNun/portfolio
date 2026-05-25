@@ -41,30 +41,28 @@ export function Hero() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
-            Disponible para trabajar
+            Open to opportunities
           </Badge>
-          
-          {/* Updated heading with better text balance */}
+
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-balance">
-            Hola, soy{" "}
+            Hi, I&apos;m{" "}
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Pau López
             </span>
           </h1>
-          
-          {/* Updated subtitle and removed specific technologies from description as requested */}
+
           <h2 className="text-xl md:text-2xl lg:text-3xl text-muted-foreground font-medium text-pretty">
-            App Developer
+            Backend Developer · <span className="text-foreground">Java & Spring Boot</span>
           </h2>
-          
+
           <p className="text-base md:text-lg text-muted-foreground max-w-lg mx-auto md:mx-0 leading-relaxed text-pretty">
-            Soy Pau, estudiante de <span className="text-foreground font-medium">Desarrollo de Aplicaciones Multiplataforma</span> con pasión por crear software inspirador, útil y creativo.
+            Backend developer focused on <span className="text-foreground font-medium">Java & Spring Boot</span>: REST APIs, JPA/Hibernate persistence, JWT security, hexagonal architecture and distributed systems with RabbitMQ and Docker.
           </p>
 
           <div className="flex flex-wrap gap-3 justify-center md:justify-start pt-4">
             <Button asChild size="lg" className="rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all">
               <Link href="#contact">
-                Contáctame <Mail className="ml-2 h-4 w-4" />
+                Get in touch <Mail className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="rounded-full hover:bg-secondary">
@@ -81,7 +79,7 @@ export function Hero() {
 
           <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground pt-2">
             <MapPin className="h-4 w-4" />
-            <span>Valencia, España 🇪🇸</span>
+            <span>Valencia, Spain 🇪🇸</span>
           </div>
         </motion.div>
 
@@ -101,7 +99,7 @@ export function Hero() {
             {mounted && (
               <Image
                 src={resolvedTheme === "dark" ? "/portfolio/images/profilepic2.png" : "/portfolio/images/profilepic.png"}
-                alt="Pau López Núñez - Mobile Developer"
+                alt="Pau López Núñez - Backend Developer"
                 fill
                 className="object-cover"
                 priority

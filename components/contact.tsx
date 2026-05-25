@@ -33,21 +33,21 @@ const contactMethods = [
 const highlights = [
   {
     icon: MapPin,
-    label: "Ubicación",
-    value: "Valencia, España",
-    description: "Disponible para remoto y presencial",
+    label: "Location",
+    value: "Valencia, Spain",
+    description: "Available remote & on-site",
   },
   {
     icon: Languages,
-    label: "Idiomas",
-    value: "Español (Nativo) • Inglés (C1)",
-    description: "Comunicación profesional fluida",
+    label: "Languages",
+    value: "Spanish (Native) · English (C1)",
+    description: "Professional communication",
   },
   {
     icon: GraduationCap,
-    label: "Formación • DAM",
-    value: "Formación Profesional",
-    description: "Estudiante activo y apasionado",
+    label: "Education · DAM",
+    value: "Higher Vocational Training",
+    description: "Java, Spring Boot, Kotlin & clean architectures",
   },
 ]
 
@@ -61,13 +61,12 @@ export function Contact() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance">Trabajemos Juntos</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance">Let&apos;s Build Together</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto text-pretty">
-            Estoy buscando oportunidades de <span className="text-foreground font-medium">prácticas</span> y <span className="text-foreground font-medium">posiciones junior</span> en desarrollo móvil. ¡Conectemos!
+            Open to <span className="text-foreground font-medium">junior backend roles</span>, internships and collaborative projects around <span className="text-foreground font-medium">Java, Spring Boot and distributed systems</span>.
           </p>
         </motion.div>
 
-        {/* Contact methods cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           {contactMethods.map((method, index) => (
             <motion.div
@@ -115,14 +114,14 @@ export function Contact() {
           className="text-center"
         >
           <Card className="p-8 md:p-12 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-            <h3 className="text-2xl font-bold mb-4 text-balance">¿Tienes un proyecto en mente?</h3>
+            <h3 className="text-2xl font-bold mb-4 text-balance">Have a project in mind?</h3>
             <p className="text-muted-foreground mb-6 max-w-xl mx-auto text-pretty">
-              Estoy disponible para colaborar en proyectos de desarrollo móvil, aplicaciones multiplataforma y soluciones innovadoras.
+              Available for junior backend roles, internships and collaborations on Java, Spring Boot, Kotlin and distributed systems projects.
             </p>
             <Button asChild size="lg" className="rounded-full shadow-lg shadow-primary/20">
               <Link href="mailto:paulopeznunez@gmail.com">
                 <Mail className="mr-2 h-5 w-5" />
-                Envíame un mensaje
+                Send me a message
               </Link>
             </Button>
           </Card>

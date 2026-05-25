@@ -2,30 +2,38 @@
 
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
-import { GraduationCap, Trophy, Code, Calendar, Briefcase } from 'lucide-react'
+import { GraduationCap, Trophy, Code, Briefcase } from 'lucide-react'
 
 const timeline = [
   {
-    year: "May. 2025 - Jun. 2025",
-    title: "Desarrollador Full Stack",
-    institution: "Feria Valencia · Contrato de prácticas",
-    description: "Desarrollo web en remoto utilizando MJML, Docker y tecnologías modernas. Implementación de soluciones eficientes y trabajo en equipo.",
+    year: "2025 – Present",
+    title: "Backend Developer Intern",
+    institution: "Java & Spring Boot Internship",
+    description: "Building backend systems with Java 21 and Spring Boot: REST APIs, JWT security, JPA/Hibernate persistence, Flyway migrations and integration tests with JUnit 5 and Testcontainers. Team workflow with GitHub Flow and code reviews.",
     icon: Briefcase,
     type: "experience"
   },
   {
-    year: "2024 - Presente",
-    title: "Desarrollo de Aplicaciones Multiplataforma",
-    institution: "Formación Profesional Superior",
-    description: "Especialización en desarrollo móvil con Kotlin, Swift y Flutter. Aprendizaje de arquitecturas limpias y buenas prácticas.",
+    year: "May 2025 – Jun 2025",
+    title: "Full Stack Developer",
+    institution: "Feria Valencia · Internship Contract",
+    description: "Remote web development using MJML, Docker and modern tooling. Implemented responsive newsletter systems and cloud deployments.",
+    icon: Briefcase,
+    type: "experience"
+  },
+  {
+    year: "2024 – Present",
+    title: "Higher Technical Degree in Cross-platform App Development",
+    institution: "Vocational Training (DAM)",
+    description: "Backend development with Java and Spring Boot, mobile development with Kotlin and Jetpack Compose, clean architectures, DDD and software engineering best practices.",
     icon: GraduationCap,
     type: "education"
   },
   {
-    year: "2023 - 2024",
-    title: "Proyectos Open Source",
+    year: "2023 – 2024",
+    title: "Open Source Projects",
     institution: "GitHub",
-    description: "Desarrollo activo de proyectos como FlowBoard y RenderMail. Contribuciones a la comunidad y aprendizaje continuo.",
+    description: "Built FlowBoard (Kotlin + Ktor + WebSockets) and Supply Chain Simulator (Java microservices + RabbitMQ). Over 1,100 contributions in the last year across distributed systems, APIs and mobile apps.",
     icon: Code,
     type: "experience"
   }
@@ -34,7 +42,6 @@ const timeline = [
 export function Experience() {
   return (
     <section id="experience" className="py-24 bg-background relative overflow-hidden">
-      {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 right-0 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
@@ -47,9 +54,9 @@ export function Experience() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance">Mi Trayectoria</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance">Experience & Education</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto text-pretty">
-            Un recorrido por mi formación académica y hitos importantes en mi camino como desarrollador.
+            Hands-on backend development through internships, real-world projects and continuous learning.
           </p>
         </motion.div>
 
@@ -63,12 +70,10 @@ export function Experience() {
               transition={{ delay: index * 0.1 }}
               className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
             >
-              {/* Icon */}
               <div className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 dark:border-gray-800 bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 group-hover:border-primary transition-colors">
                 <item.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
 
-              {/* Content */}
               <Card className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 hover:shadow-lg transition-all duration-300 border-primary/10 hover:border-primary/30 bg-card/50 backdrop-blur">
                 <div className="flex items-center justify-between mb-2">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
