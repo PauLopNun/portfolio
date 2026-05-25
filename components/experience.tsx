@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
-import { GraduationCap, Trophy, Code, Briefcase } from 'lucide-react'
+import { GraduationCap, Trophy, Code, Briefcase, ExternalLink } from 'lucide-react'
+import Link from "next/link"
 
 const timeline = [
   {
@@ -37,6 +38,57 @@ const timeline = [
     icon: Code,
     type: "experience"
   }
+]
+
+const certifications = [
+  {
+    name: "Claude Code in Action",
+    issuer: "Anthropic",
+    date: "May 2026",
+    logo: "https://cdn.simpleicons.org/anthropic/000000",
+    darkInvert: true,
+    href: "https://verify.skilljar.com/c/rcdgxoecp9as",
+  },
+  {
+    name: "Unity Junior Programmer",
+    issuer: "Unity",
+    date: "Apr 2026",
+    logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/unity/unity-original.svg",
+    darkInvert: true,
+    href: "https://www.credly.com/badges/386504b3-0be1-4fda-b676-d2652e352b63/linked_in_profile",
+  },
+  {
+    name: "Software Dev Fundamentals",
+    issuer: "Microsoft",
+    date: "Jan 2026",
+    logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows8/windows8-original.svg",
+    darkInvert: false,
+    href: "https://www.linkedin.com/learning/certificates/618c2880d6b4c688a92c1864350d1c4d0b0b397dd8da3006c94dea45811a8900",
+  },
+  {
+    name: "Spring Boot: Module Integration",
+    issuer: "LinkedIn Learning",
+    date: "Jan 2026",
+    logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/linkedin/linkedin-original.svg",
+    darkInvert: false,
+    href: "https://www.linkedin.com/learning/certificates/320b82379f88da31de0ed5d40a2bb01e933cea8081c95e1c818cd75c4567ccfa",
+  },
+  {
+    name: "Mastering Java: Unit Tests (JUnit)",
+    issuer: "LinkedIn Learning",
+    date: "Aug 2025",
+    logo: "https://cdn.simpleicons.org/junit5/25A162",
+    darkInvert: false,
+    href: "https://www.linkedin.com/learning/certificates/a5475ffd7d47d5b0e7f26b6a0fe9b47c7c42e662b7e763f5cf0f9b016fcb81f2",
+  },
+  {
+    name: "Docker Essentials",
+    issuer: "LinkedIn Learning",
+    date: "Dec 2025",
+    logo: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg",
+    darkInvert: false,
+    href: "https://www.linkedin.com/learning/certificates/b9f2314e09566341860becb61b763b8f26ef6d12360f26b04c83bb48989f7801",
+  },
 ]
 
 export function Experience() {
@@ -92,6 +144,62 @@ export function Experience() {
             </motion.div>
           ))}
         </div>
+
+        {/* Certifications */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+          className="mt-20"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <Trophy className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Certifications</h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {certifications.map((cert, index) => (
+              <motion.div
+                key={cert.name}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Link href={cert.href} target="_blank" rel="noopener noreferrer">
+                  <Card className="p-4 flex items-center gap-3 bg-card/50 backdrop-blur border-primary/10 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md hover:border-primary/30 cursor-pointer group">
+                    <div className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg bg-secondary">
+                      <img
+                        src={cert.logo}
+                        alt={cert.issuer}
+                        className={`w-5 h-5 object-contain ${cert.darkInvert ? "dark:invert" : ""}`}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold leading-tight truncate group-hover:text-primary transition-colors">{cert.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{cert.issuer} · {cert.date}</p>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-6 text-center">
+            <Link
+              href="https://www.linkedin.com/in/paulopnun/details/certifications/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              View all certifications on LinkedIn
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </motion.div>
+
       </div>
     </section>
   )
