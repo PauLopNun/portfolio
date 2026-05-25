@@ -8,13 +8,6 @@
 [![GitHub](https://img.shields.io/badge/GitHub-PauLopNun-181717?style=for-the-badge&logo=github)](https://github.com/PauLopNun)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-paulopnun-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/paulopnun/)
 
----
-
-### Preview
-
-[![Portfolio Preview Light](.github/assets/paulopnun.github.io_portfolio_light.png)](https://paulopnun.github.io/portfolio/)
-
-[![Portfolio Preview Dark](.github/assets/paulopnun.github.io_portfolio_dark.png)](https://paulopnun.github.io/portfolio/)
 
 </div>
 
