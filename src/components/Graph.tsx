@@ -2,8 +2,6 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { heroState } from '../heroState'
 
-// Technologies from the stack in src/data.ts, spread evenly around the network.
-const LABELS = ['Java', 'Spring Boot', 'Oracle PL/SQL', 'AWS', 'Angular', 'RabbitMQ', 'PostgreSQL', 'Docker']
 const FOV = 50
 const TAN = Math.tan((FOV / 2) * (Math.PI / 180))
 
@@ -21,27 +19,22 @@ const smooth = (x: number, a: number, b: number) => {
   return t * t * (3 - 2 * t)
 }
 
+// Every particle has two homes: a pixel of the portrait (aA) and a point inside the GitHub mark (aB).
 const VERT = /* glsl */ `
-  uniform float uProg, uTime, uPR, uScale, uStrength, uGraphSize;
+  uniform float uProg, uTime, uPR, uScale, uStrength, uLogoSize;
   uniform vec2 uMouse;
   attribute vec3 aA;
-  attribute vec3 aEA;
-  attribute vec3 aEB;
-  attribute vec4 aP; // x: start along edge, y: speed, z: seed, w: size
+  attribute vec3 aB;
+  attribute vec2 aP; // x: seed, y: size in the portrait
   attribute vec3 aCol;
   varying vec3 vCol;
-  varying float vAcc, vMix, vNode, vNoise;
+  varying float vAcc, vMix, vNoise;
 
   void main() {
-    float seed = aP.z;
+    float seed = aP.x;
     vec3 A = aA;
     A.z += sin(uTime * 0.8 + seed * 40.0) * 0.015;
-
-    float t = fract(aP.x + uTime * aP.y);
-    vec3 B = mix(aEA, aEB, t);
-    float ang = sin(uTime * 0.12) * 0.45;
-    float ca = cos(ang), sa = sin(ang);
-    B = vec3(B.x * ca + B.z * sa, B.y, -B.x * sa + B.z * ca);
+    vec3 B = aB + 0.022 * vec3(sin(uTime * 0.9 + seed * 50.0), cos(uTime * 0.7 + seed * 70.0), sin(uTime * 0.8 + seed * 30.0));
 
     float lt = clamp(uProg * 1.7 - seed * 0.7, 0.0, 1.0);
     float e = lt * lt * (3.0 - 2.0 * lt);
@@ -55,35 +48,32 @@ const VERT = /* glsl */ `
 
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
-    vNode = step(length(aEB - aEA), 0.0001);
-    gl_PointSize = max(mix(aP.w, uGraphSize, e) * (1.0 + vNode * e * 0.9) * uScale * uPR / -mv.z, 1.4);
+    gl_PointSize = max(mix(aP.y, uLogoSize, e) * uScale * uPR / -mv.z, 1.4);
     vCol = aCol;
     vNoise = fract(seed * 91.7);
-    vAcc = step(0.9, fract(seed * 7.13));
+    vAcc = step(0.93, fract(seed * 7.13));
     vMix = e;
   }
 `
 
 const FRAG = /* glsl */ `
   varying vec3 vCol;
-  varying float vAcc, vMix, vNode, vNoise;
+  varying float vAcc, vMix, vNoise;
   void main() {
     float d = length(gl_PointCoord - 0.5);
     if (d > 0.5) discard;
     float a = smoothstep(0.5, 0.36, d);
     vec3 skin = (vCol * 1.1 + 0.01) * (0.9 + 0.2 * vNoise);
-    vec3 graph = vec3(0.953, 0.933, 0.894) * 0.55;
+    vec3 logo = vec3(0.953, 0.933, 0.894) * (0.8 + 0.2 * vNoise);
     vec3 accent = vec3(1.0, 0.42, 0.24);
-    vec3 col = mix(skin, graph, vMix);
-    col = mix(col, accent, vAcc * (0.12 + 0.88 * vMix) * (1.0 - vNode));
-    col = mix(col, vec3(0.953, 0.933, 0.894), vNode * vMix);
+    vec3 col = mix(skin, logo, vMix);
+    col = mix(col, accent, vAcc * (0.1 + 0.9 * vMix));
     gl_FragColor = vec4(col, a);
   }
 `
 
 export default function Graph() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const labelRefs = useRef<(HTMLSpanElement | null)[]>([])
 
   useEffect(() => {
     const canvas = canvasRef.current!
@@ -91,8 +81,9 @@ export default function Graph() {
     const small = window.innerWidth < 700
     const N = small ? 210 : 360 // sampling grid of the portrait
     const PORTRAIT = small ? 5.4 : 6.2
-    const GRAPH_SCALE = small ? 0.62 : 1
+    const LOGO = small ? 3.9 : 5.2
     const rand = rng(7)
+    const base = import.meta.env.BASE_URL
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'low-power' })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -102,84 +93,7 @@ export default function Graph() {
     const group = new THREE.Group()
     scene.add(group)
     const home = small ? { x: 0, y: 2.6 } : { x: 3.0, y: -0.1 }
-
-    // ---- network: nodes spread evenly over a sphere (Fibonacci lattice) around a core.
-    // Each node links to its nearest neighbours; the labelled ones also link to the core.
-    const S = GRAPH_SCALE
-    const end = small ? { x: 0, y: 1.0 } : { x: 2.2, y: 0.35 }
-    const R = 2.7
-    const COUNT = small ? 30 : 44
-    type GNode = { p: THREE.Vector3; w: number; label?: string }
-    const nodes: GNode[] = []
-    const edges: { a: number; b: number; bus: boolean }[] = []
-    const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z)
-
-    nodes.push({ p: V(0, 0, 0), w: 130, label: undefined })
-    const golden = Math.PI * (3 - Math.sqrt(5))
-    for (let i = 0; i < COUNT; i++) {
-      const y = 1 - (2 * (i + 0.5)) / COUNT
-      const rr = Math.sqrt(1 - y * y)
-      const t = i * golden
-      nodes.push({ p: V(Math.cos(t) * rr * R * 1.25, y * R * 0.95, Math.sin(t) * rr * R).multiplyScalar(S), w: 10 })
-    }
-    const labelCount = small ? 5 : LABELS.length
-    const dirs = Array.from({ length: labelCount }, (_, k) => {
-      if (k === 0) return V(0, 0, 1)
-      const t = ((k - 1) / (labelCount - 1)) * Math.PI * 2 + 0.3
-      return V(Math.cos(t) * 0.87, Math.sin(t) * 0.87, 0.5)
-    })
-    const unit = nodes.map((n) => n.p.clone().divide(V(1.25 * S, 0.95 * S, S)).normalize())
-    const labelIdx = dirs.map((d) => {
-      let best = 1
-      for (let i = 1; i <= COUNT; i++) if (unit[i].dot(d) > unit[best].dot(d)) best = i
-      return best
-    })
-    labelIdx.forEach((n, k) => {
-      nodes[n].label = LABELS[k]
-      nodes[n].w = 45
-    })
-
-    const seen = new Set<string>()
-    const link = (x: number, y: number, bus: boolean) => {
-      const key = x < y ? x + '-' + y : y + '-' + x
-      if (seen.has(key)) return
-      seen.add(key)
-      edges.push({ a: x, b: y, bus })
-    }
-    for (let i = 1; i <= COUNT; i++) {
-      nodes
-        .slice(1)
-        .map((n, j) => [j + 1, n.p.distanceTo(nodes[i].p)] as const)
-        .filter(([j]) => j !== i)
-        .sort((p, q) => p[1] - q[1])
-        .slice(0, 3)
-        .forEach(([j]) => link(i, j, false))
-    }
-    labelIdx.forEach((n) => link(0, n, true)) // spokes from the core: where the orange particles travel
-
-    const elen = edges.map((e) => nodes[e.a].p.distanceTo(nodes[e.b].p))
-    const picker = (w: number[]) => {
-      const cum: number[] = []
-      w.reduce((sum, x, i) => (cum[i] = sum + x), 0)
-      const tot = cum[cum.length - 1]
-      return () => {
-        const x = rand() * tot
-        let lo = 0
-        let hi = cum.length - 1
-        while (lo < hi) {
-          const m = (lo + hi) >> 1
-          if (cum[m] < x) lo = m + 1
-          else hi = m
-        }
-        return lo
-      }
-    }
-    const pickEdge = picker(edges.map((e, i) => elen[i] * (e.bus ? 1.5 : 1)))
-    const busIdx = edges.flatMap((e, i) => (e.bus ? [i] : []))
-    const pickBusAt = picker(busIdx.map((i) => elen[i]))
-    const pickBus = () => busIdx[pickBusAt()]
-    const pickNode = picker(nodes.map((n) => n.w))
-    const labelNodes = labelIdx
+    const end = small ? { x: 0, y: 1.7 } : { x: 2.8, y: 0.5 }
 
     const uniforms = {
       uProg: { value: 0 },
@@ -187,7 +101,7 @@ export default function Graph() {
       uPR: { value: renderer.getPixelRatio() },
       uScale: { value: 600 },
       uStrength: { value: 1 },
-      uGraphSize: { value: small ? 0.04 : 0.028 },
+      uLogoSize: { value: small ? 0.034 : 0.028 },
       uMouse: { value: new THREE.Vector2(999, 999) },
     }
     const material = new THREE.ShaderMaterial({
@@ -206,7 +120,6 @@ export default function Graph() {
     // ---- frame
     let prog = 0
     let time = 0
-    const world = new THREE.Vector3()
     const mouse = { x: 999, y: 999, active: false }
     const frame = (dt: number) => {
       time += dt
@@ -223,34 +136,10 @@ export default function Graph() {
         0,
       )
       if (mouse.active) uniforms.uMouse.value.set(mouse.x * halfW - group.position.x, mouse.y * halfH - group.position.y)
-
-      const { clientWidth: w, clientHeight: h } = canvas
-      const ca = Math.cos(Math.sin(time * 0.12) * 0.45)
-      const sa = Math.sin(Math.sin(time * 0.12) * 0.45)
-      labelNodes.forEach((n, k) => {
-        const el = labelRefs.current[k]
-        if (!el) return
-        const show = smooth(prog, 0.7, 0.95)
-        el.style.opacity = String(show)
-        if (show <= 0) return
-        const p = nodes[n].p
-        world.set(p.x * ca + p.z * sa, p.y, -p.x * sa + p.z * ca).add(group.position).project(camera)
-        const front = smooth(-p.x * sa + p.z * ca, -R * S * 0.6, R * S * 0.6)
-        el.style.opacity = String(show * (0.25 + 0.75 * front))
-        const sx = (world.x * 0.5 + 0.5) * w
-        const sy = (-world.y * 0.5 + 0.5) * h
-        // keep labels off the closing sentence at the bottom left
-        if (sy > h * 0.64 && (small || sx < w * 0.65)) el.style.opacity = '0'
-        const flip = sx + 20 + el.offsetWidth > w - 8 // not enough room on the right: put the label on the left of the node
-        el.style.transform = `translate(${flip ? sx - 20 - el.offsetWidth : sx + 20}px, ${sy - 12}px)`
-      })
       renderer.render(scene, camera)
     }
 
-    // ---- portrait → particles (luminance picks brightness, distance from the backdrop picks the silhouette)
-    let cancelled = false
-    const img = new Image()
-    img.onload = () => {
+    const build = () => {
       if (cancelled) return
       const c = document.createElement('canvas')
       c.width = c.height = N
@@ -259,10 +148,55 @@ export default function Graph() {
       const px = g.getImageData(0, 0, N, N).data
       const at = (x: number, y: number, k: number) => px[(y * N + x) * 4 + k] / 255
 
+      // Backdrop = pixels close to the backdrop colour that connect to the image border. Anything enclosed
+      // by the subject (the shadow under the jaw, gaps between curls) stays part of the portrait.
+      const looksLikeBackdrop = (x: number, y: number) => {
+        const yb = Math.min(y, Math.floor(N * 0.45)) // backdrop is read from the upper rows, below them the border is the shirt
+        const u = x / N
+        const i = (y * N + x) * 4
+        const pr = px[i] / 255
+        const pg = px[i + 1] / 255
+        const pb = px[i + 2] / 255
+        // the backdrop is a neutral grey; warm skin shadows are not, so the fill cannot leak into the neck
+        const neutral = Math.abs(pr - pb) < 0.04 && Math.abs(pg - (pr + pb) / 2) < 0.04
+        return (
+          neutral &&
+          Math.hypot(
+            pr - (at(2, yb, 0) * (1 - u) + at(N - 3, yb, 0) * u),
+            pg - (at(2, yb, 1) * (1 - u) + at(N - 3, yb, 1) * u),
+            pb - (at(2, yb, 2) * (1 - u) + at(N - 3, yb, 2) * u),
+          ) < 0.15
+        )
+      }
+      const backdrop = new Uint8Array(N * N)
+      const stack: number[] = []
+      const flood = (x: number, y: number) => {
+        const k = y * N + x
+        if (!backdrop[k] && looksLikeBackdrop(x, y)) {
+          backdrop[k] = 1
+          stack.push(k)
+        }
+      }
+      for (let t = 0; t < N; t++) {
+        flood(t, 0)
+        flood(t, N - 1)
+        flood(0, t)
+        flood(N - 1, t)
+      }
+      while (stack.length) {
+        const k = stack.pop()!
+        const x = k % N
+        const y = (k - x) / N
+        if (x > 0) flood(x - 1, y)
+        if (x < N - 1) flood(x + 1, y)
+        if (y > 0) flood(x, y - 1)
+        if (y < N - 1) flood(x, y + 1)
+      }
+
       const mask = new ImageData(N, N) // silhouette of the portrait, used to cut out the photo underneath
       const A: number[] = []
-      const lum: number[] = []
       const col: number[] = []
+      const lum: number[] = []
       for (let y = 0; y < N; y++)
         for (let x = 0; x < N; x++) {
           const i = (y * N + x) * 4
@@ -271,57 +205,52 @@ export default function Graph() {
           const b = px[i + 2] / 255
           const u = x / N
           const v = y / N
-          const yb = Math.min(y, Math.floor(N * 0.45)) // backdrop is read from the upper rows, below them the border is the shirt
-          const dist = Math.hypot(
-            r - (at(2, yb, 0) * (1 - u) + at(N - 3, yb, 0) * u),
-            gg - (at(2, yb, 1) * (1 - u) + at(N - 3, yb, 1) * u),
-            b - (at(2, yb, 2) * (1 - u) + at(N - 3, yb, 2) * u),
-          )
           const radial = Math.hypot((u - 0.5) / 0.5, (v - 0.46) / 0.56)
           const fade = 1 - smooth(radial, 0.7, 1.02)
-          mask.data[i + 3] = dist < 0.15 ? 0 : 255 * fade
-          if (dist < 0.15 || rand() < 1 - fade) continue
-          const l = 0.2126 * r + 0.7152 * gg + 0.0722 * b
+          const isBackdrop = backdrop[y * N + x] === 1
+          mask.data[i + 3] = isBackdrop ? 0 : 255 * fade
+          if (isBackdrop || rand() < 1 - fade) continue
           const cell = PORTRAIT / N
           A.push((u - 0.5) * PORTRAIT + (rand() - 0.5) * cell * 0.5, (0.5 - v) * PORTRAIT + (rand() - 0.5) * cell * 0.5, 0)
-          lum.push(l)
           col.push(r, gg, b)
+          lum.push(0.2126 * r + 0.7152 * gg + 0.0722 * b)
         }
       const M = lum.length
-      const aEA = new Float32Array(M * 3)
-      const aEB = new Float32Array(M * 3)
-      const aP = new Float32Array(M * 4)
-      const jit = () => (rand() - 0.5) * 0.02
+
+      // ---- the GitHub mark: every particle gets a random point inside its silhouette
+      const LS = 512
+      const lc = document.createElement('canvas')
+      lc.width = lc.height = LS
+      const lg = lc.getContext('2d', { willReadFrequently: true })!
+      lg.drawImage(logo, 0, 0, LS, LS)
+      const ld = lg.getImageData(0, 0, LS, LS).data
+      const filled: number[] = []
+      for (let k = 0; k < LS * LS; k++) if (ld[k * 4 + 3] > 128) filled.push(k)
+
+      const aB = new Float32Array(M * 3)
+      const aP = new Float32Array(M * 2)
       for (let i = 0; i < M; i++) {
-        const v = 0.5 - A[i * 3 + 1] / PORTRAIT
-        const seed = Math.min(Math.max(0.62 * v + 0.38 * rand(), 0), 0.999)
-        const accent = (seed * 7.13) % 1 > 0.9 // orange particles = events travelling along the bus lines
-        let ea: THREE.Vector3
-        let eb: THREE.Vector3
-        let speed = 0
-        if (!accent && rand() < 0.04) {
-          // a few particles rest on the nodes so the services read as dots
-          const j = V(rand() - 0.5, rand() - 0.5, rand() - 0.5).multiplyScalar(0.2 * S)
-          ea = eb = nodes[pickNode()].p.clone().add(j)
+        if (filled.length) {
+          const k = filled[(rand() * filled.length) | 0]
+          aB[i * 3] = ((k % LS) + rand()) / LS - 0.5
+          aB[i * 3 + 1] = 0.5 - (Math.floor(k / LS) + rand()) / LS
+          aB[i * 3 + 2] = (rand() - 0.5) * 0.04
+          aB[i * 3] *= LOGO
+          aB[i * 3 + 1] *= LOGO
         } else {
-          const ei = accent ? pickBus() : pickEdge()
-          let { a: na, b: nb } = edges[ei]
-          if (accent && rand() < 0.5) [na, nb] = [nb, na]
-          const j = V(jit(), jit(), jit())
-          ea = nodes[na].p.clone().add(j)
-          eb = nodes[nb].p.clone().add(j)
-          speed = ((accent ? 0.75 : 0.28) * (0.6 + rand() * 0.8)) / elen[ei]
+          aB.set([A[i * 3], A[i * 3 + 1], 0], i * 3) // icon failed to load: stay a portrait
         }
-        aEA.set(ea.toArray(), i * 3)
-        aEB.set(eb.toArray(), i * 3)
-        aP.set([rand(), speed, seed, (PORTRAIT / N) * (1.7 + lum[i] * 0.4)], i * 4)
+        const v = 0.5 - A[i * 3 + 1] / PORTRAIT
+        const seed = Math.min(Math.max(0.62 * v + 0.38 * rand(), 0), 0.999) // dissolves from the top down
+        aP[i * 2] = seed
+        aP[i * 2 + 1] = (PORTRAIT / N) * (1.7 + lum[i] * 0.4)
       }
       geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(M * 3), 3))
       geo.setAttribute('aA', new THREE.BufferAttribute(new Float32Array(A), 3))
-      geo.setAttribute('aEA', new THREE.BufferAttribute(aEA, 3))
-      geo.setAttribute('aEB', new THREE.BufferAttribute(aEB, 3))
-      geo.setAttribute('aP', new THREE.BufferAttribute(aP, 4))
+      geo.setAttribute('aB', new THREE.BufferAttribute(aB, 3))
+      geo.setAttribute('aP', new THREE.BufferAttribute(aP, 2))
       geo.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(col), 3))
+
       // the photo itself, cut out and sitting just behind the particles: it fills the gaps between dots
       const T = 720
       const pc = document.createElement('canvas')
@@ -359,7 +288,20 @@ export default function Graph() {
       group.add(points)
       if (reduced) frame(0)
     }
-    img.src = `${import.meta.env.BASE_URL}images/portrait.webp`
+
+    let cancelled = false
+    const img = new Image()
+    const logo = new Image()
+    logo.width = logo.height = 512 // the SVG only has a viewBox; give it a size so it can be drawn to a canvas
+    let pending = 2
+    const loaded = () => {
+      if (--pending === 0) build()
+    }
+    img.onload = loaded
+    logo.onload = loaded
+    logo.onerror = loaded
+    img.src = `${base}images/portrait.webp`
+    logo.src = `${base}icons/github.svg`
 
     // ---- viewport + pointer
     const resize = () => {
@@ -414,13 +356,8 @@ export default function Graph() {
   }, [])
 
   return (
-    <div className="graph" role="img" aria-label="Portrait of Pau López Núñez that dissolves into a network of the technologies he works with">
+    <div className="graph" role="img" aria-label="Portrait of Pau López Núñez that dissolves and rebuilds itself as the GitHub logo">
       <canvas ref={canvasRef} />
-      {LABELS.slice(0, window.innerWidth < 700 ? 3 : LABELS.length).map((l, i) => (
-        <span key={l} className="glabel" aria-hidden="true" ref={(el) => { labelRefs.current[i] = el }}>
-          {l}
-        </span>
-      ))}
     </div>
   )
 }

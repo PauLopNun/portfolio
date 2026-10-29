@@ -17,8 +17,6 @@ const icon = (n: string) => `${base}icons/${n}.svg`
 const STATEMENT =
   'I build backends that talk through events. Enterprise Java, Spring Boot, Angular and Oracle PL/SQL by day, hexagonal architecture, DDD and RabbitMQ in the services I design, and AWS in the evenings.'
 
-const FIRST_SENTENCE = STATEMENT.split('. ')[0] + '.'
-
 function Clock() {
   const [t, setT] = useState('')
   useEffect(() => {
@@ -126,7 +124,7 @@ export default function App() {
           },
         })
         .to('.hero-inner', { opacity: 0, y: -50, ease: 'none', duration: 0.35 }, 0)
-        .fromTo('.hero-after', { opacity: 0, y: 40 }, { opacity: 1, y: 0, ease: 'none', duration: 0.28 }, 0.72)
+        .fromTo('.hero-after', { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, ease: 'none', duration: 0.28 }, 0.72)
 
       // pins first, so every ScrollTrigger created after them measures positions that include the pin spacing
       const mm = gsap.matchMedia()
@@ -294,7 +292,10 @@ export default function App() {
             </div>
           </div>
           <div className="scroll mono"><span className="hero-fade">Scroll</span></div>
-          <p className="hero-after" aria-hidden="true">{FIRST_SENTENCE}</p>
+          <div className="hero-after">
+            <p>See the code on GitHub.</p>
+            <a className="btn" href={profile.github} target="_blank" rel="noreferrer">{profile.github.replace('https://', '')} ↗</a>
+          </div>
         </section>
 
         <section className="statement" id="about">
