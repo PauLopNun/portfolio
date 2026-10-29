@@ -1,6 +1,6 @@
 
-import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react"
-import { motion, useAnimationFrame, useInView, useMotionValue, useScroll, useSpring, useVelocity } from "framer-motion"
+import { createRef, useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode, type RefObject } from "react"
+import { motion, useAnimationFrame, useInView, useMotionValue, useScroll, useSpring, useTransform, useVelocity } from "framer-motion"
 import { ArrowUpRight, Check, Copy, Github, Linkedin, Mail } from "lucide-react"
 import { asset, certificates, education, featured, jobs, moreProjects, practices, profile, stack } from "../data"
 import { useMotionPref } from "../theme"
@@ -81,7 +81,7 @@ export function Marquee() {
   )
   return (
     <div className="relative z-10 -my-4 overflow-hidden py-10" aria-hidden>
-      <div className="-mx-4 border-y-2 border-line bg-accent py-4 text-on-accent">
+      <div className="mx-2.5 overflow-hidden border-y-2 border-line bg-accent py-4 text-on-accent sm:mx-3.5">
         <div className="anim-marquee flex w-max">
           {row}
           {row}
@@ -229,7 +229,75 @@ export function About() {
 
 /* Experience */
 
+function useWide() {
+  const [wide, setWide] = useState(() => window.matchMedia("(min-width: 768px)").matches)
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)")
+    const on = () => setWide(mq.matches)
+    mq.addEventListener("change", on)
+    return () => mq.removeEventListener("change", on)
+  }, [])
+  return wide
+}
+
+function ExperienceCard({
+  job,
+  i,
+  self,
+  next,
+}: {
+  job: (typeof jobs)[number]
+  i: number
+  self: RefObject<HTMLLIElement | null>
+  next?: RefObject<HTMLLIElement | null>
+}) {
+  const { motion: m } = useMotionPref()
+  const wide = useWide()
+  // progress of the NEXT card travelling up to its pinned spot (stays at 1 once pinned)
+  const { scrollYProgress } = useScroll({ target: next ?? self, offset: ["start end", "start 150px"] })
+  const scale = useTransform(scrollYProgress, [0, 1], [1, next ? 0.94 : 1])
+  const dim = useTransform(scrollYProgress, [0, 1], [0, next ? 0.16 : 0])
+  const animate = m === "on" && wide && !!next
+
+  return (
+    <li ref={self} className="md:sticky" style={{ top: `calc(6.5rem + ${i * 1.5}rem)` }}>
+      <Reveal>
+        <motion.article
+          style={animate ? { scale, transformOrigin: "50% 0%" } : undefined}
+          className="sticker relative grid gap-6 rounded-3xl p-6 sm:p-8 md:grid-cols-[13rem_1fr]"
+        >
+          {animate && <motion.div aria-hidden style={{ opacity: dim }} className="pointer-events-none absolute inset-0 rounded-[1.4rem] bg-ink" />}
+          <div>
+            <p className="mb-3 font-display text-5xl font-extrabold leading-none tracking-[0.06em] text-card [-webkit-text-stroke:4px_var(--ink)] [paint-order:stroke_fill]">
+              0{i + 1}
+            </p>
+            <p className="font-mono text-sm font-semibold text-accent-ink">{job.period}</p>
+            <p className="mt-1 font-mono text-xs text-dim">{job.place}</p>
+            {i === 0 && (
+              <span className="mt-3 inline-block rounded-full border-2 border-line bg-mint px-2.5 py-0.5 font-mono text-[0.68rem] font-bold text-[#17182c]">
+                current
+              </span>
+            )}
+          </div>
+          <div>
+            <h3 className="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{job.company}</h3>
+            <p className="font-medium text-ink">{job.role}</p>
+            <p className="mt-3 leading-relaxed">{job.summary}</p>
+            <Bullets items={job.points} />
+            <ul className="mt-5 flex flex-wrap gap-2">
+              {job.stack.map((s) => (
+                <Pill key={s}>{s}</Pill>
+              ))}
+            </ul>
+          </div>
+        </motion.article>
+      </Reveal>
+    </li>
+  )
+}
+
 export function Experience() {
+  const refs = useMemo(() => jobs.map(() => createRef<HTMLLIElement>()), [])
   return (
     <section id="experience" className={`${shell} bg-bg-2/60`}>
       <div aria-hidden className="dots pointer-events-none absolute right-10 top-24 hidden h-40 w-72 rounded-2xl opacity-20 lg:block" />
@@ -238,35 +306,7 @@ export function Experience() {
         {/* Cards pin under the header and stack on top of each other while scrolling */}
         <ol className="space-y-8">
           {jobs.map((job, i) => (
-            <li key={job.company} className="md:sticky" style={{ top: `calc(6.5rem + ${i * 1.5}rem)` }}>
-              <Reveal>
-                <article className="sticker grid gap-6 rounded-3xl p-6 sm:p-8 md:grid-cols-[13rem_1fr]">
-                  <div>
-                    <p className="mb-3 font-display text-5xl font-extrabold leading-none tracking-[0.06em] text-card [-webkit-text-stroke:4px_var(--ink)] [paint-order:stroke_fill]">
-                      0{i + 1}
-                    </p>
-                    <p className="font-mono text-sm font-semibold text-accent-ink">{job.period}</p>
-                    <p className="mt-1 font-mono text-xs text-dim">{job.place}</p>
-                    {i === 0 && (
-                      <span className="mt-3 inline-block rounded-full border-2 border-line bg-mint px-2.5 py-0.5 font-mono text-[0.68rem] font-bold text-[#17182c]">
-                        current
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{job.company}</h3>
-                    <p className="font-medium text-ink">{job.role}</p>
-                    <p className="mt-3 leading-relaxed">{job.summary}</p>
-                    <Bullets items={job.points} />
-                    <ul className="mt-5 flex flex-wrap gap-2">
-                      {job.stack.map((s) => (
-                        <Pill key={s}>{s}</Pill>
-                      ))}
-                    </ul>
-                  </div>
-                </article>
-              </Reveal>
-            </li>
+            <ExperienceCard key={job.company} job={job} i={i} self={refs[i]} next={refs[i + 1]} />
           ))}
         </ol>
         <Reveal className="mt-12">
@@ -419,10 +459,10 @@ export function Projects() {
 
 /* Stack */
 
-function ToolChip({ t }: { t: { name: string; icon?: string } }) {
+function ToolChip({ t, plain }: { t: { name: string; icon?: string }; plain?: boolean }) {
   return (
     <span className="flex shrink-0 items-center gap-2 rounded-xl border-2 border-line bg-chip px-3.5 py-2 text-base font-semibold text-[#17182c] shadow-[3px_3px_0_0_var(--shadow)]">
-      {t.icon ? (
+      {plain ? null : t.icon ? (
         <img src={asset(`/icons/${t.icon}.svg`)} alt="" width={22} height={22} className="h-[22px] w-[22px] object-contain" />
       ) : (
         <span className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-sun font-mono text-[0.6rem] font-bold">{t.name.slice(0, 2)}</span>
@@ -433,7 +473,7 @@ function ToolChip({ t }: { t: { name: string; icon?: string } }) {
 }
 
 /* An endless row: drifts on its own, speeds up while you scroll, stops under the cursor. */
-function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: string; icon?: string }[]; reverse: boolean }) {
+function MarqueeRow({ area, tools, reverse, plain }: { area: string; tools: { name: string; icon?: string }[]; reverse: boolean; plain?: boolean }) {
   const x = useMotionValue(0)
   const half = useRef<HTMLDivElement>(null)
   const box = useRef<HTMLDivElement>(null)
@@ -459,7 +499,7 @@ function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: str
   const row = (ref?: React.Ref<HTMLDivElement>) => (
     <div ref={ref} className="flex shrink-0 gap-4 pr-4">
       {tools.map((t) => (
-        <ToolChip key={t.name} t={t} />
+        <ToolChip key={t.name} t={t} plain={plain} />
       ))}
     </div>
   )
@@ -474,7 +514,7 @@ function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: str
         <ul className="flex gap-4 overflow-x-auto pb-4 pr-1 pt-1">
           {tools.map((t) => (
             <li key={t.name} className="shrink-0">
-              <ToolChip t={t} />
+              <ToolChip t={t} plain={plain} />
             </li>
           ))}
         </ul>
@@ -504,22 +544,8 @@ export function Stack() {
           {stack.map((g, i) => (
             <MarqueeRow key={g.area} area={g.area} tools={g.tools} reverse={i % 2 === 1} />
           ))}
+          <MarqueeRow area="How I work" tools={practices.map((name) => ({ name }))} reverse={stack.length % 2 === 1} plain />
         </div>
-        <Reveal className="mt-16 sm:mt-24">
-          <div className="relative overflow-hidden rounded-3xl border-2 border-line bg-[#17182c] px-6 py-12 text-center text-[#f3eee4] shadow-[6px_6px_0_0_var(--accent)] sm:px-12 sm:py-16">
-            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-accent" />
-            <h3 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
-              How I work<span className="text-sun">.</span>
-            </h3>
-            <ul className="mx-auto mt-8 flex max-w-4xl flex-wrap justify-center gap-3 sm:gap-4">
-              {practices.map((p) => (
-                <li key={p} className="rounded-full border-2 border-[#f3eee4]/40 px-5 py-2 font-display text-lg font-bold transition-colors hover:border-sun hover:text-sun sm:text-xl">
-                  {p}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Reveal>
       </div>
     </section>
   )
