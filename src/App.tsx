@@ -1,12 +1,13 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { SplitText } from 'gsap/SplitText'
 import Lenis from 'lenis'
 import Cursor from './components/Cursor'
 import { heroState } from './heroState'
 import { profile, jobs, education, featured, moreProjects, stack, practices, certificates } from './data'
 
-gsap.registerPlugin(ScrollTrigger)
+gsap.registerPlugin(ScrollTrigger, SplitText)
 
 const Graph = lazy(() => import('./components/Graph'))
 
@@ -59,6 +60,7 @@ function Magnetic({ children, className }: { children: React.ReactNode; classNam
 export default function App() {
   const root = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
+  const lenisRef = useRef<Lenis | null>(null)
   const [active, setActive] = useState('')
   const [scrolled, setScrolled] = useState(false)
 
@@ -84,6 +86,7 @@ export default function App() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduced) return
     const lenis = new Lenis({ lerp: 0.1 })
+    lenisRef.current = lenis
     lenis.on('scroll', ScrollTrigger.update)
     const tick = (t: number) => lenis.raf(t * 1000)
     gsap.ticker.add(tick)
@@ -91,11 +94,13 @@ export default function App() {
     return () => {
       gsap.ticker.remove(tick)
       lenis.destroy()
+      lenisRef.current = null
     }
   }, [])
 
   useLayoutEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const cleanups: (() => void)[] = []
     const ctx = gsap.context(() => {
       if (reduced) {
         gsap.set('.word', { opacity: 1 })
@@ -122,6 +127,36 @@ export default function App() {
         })
         .to('.hero-inner', { opacity: 0, y: -50, ease: 'none', duration: 0.35 }, 0)
         .fromTo('.hero-after', { opacity: 0, y: 40 }, { opacity: 1, y: 0, ease: 'none', duration: 0.28 }, 0.72)
+
+      // pins first, so every ScrollTrigger created after them measures positions that include the pin spacing
+      const mm = gsap.matchMedia()
+      mm.add('(min-width: 900px)', () => {
+        const t = track.current!
+        const dist = () => t.scrollWidth - window.innerWidth
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: '.work-pin',
+            start: 'top top',
+            end: () => `+=${dist()}`,
+            pin: true,
+            scrub: 0.6,
+            invalidateOnRefresh: true,
+          },
+        })
+        tl.to(t, { x: () => -dist(), ease: 'none' }, 0).to('.work-bar', { scaleX: 1, ease: 'none' }, 0)
+
+        // keyboard focus on an off-screen card moves the pinned scroll to it
+        const onFocus = (e: FocusEvent) => {
+          const card = (e.target as HTMLElement).closest<HTMLElement>('.card')
+          const st = tl.scrollTrigger
+          if (!card || !st) return
+          const gutter = parseFloat(getComputedStyle(t).paddingLeft)
+          const p = Math.min(Math.max((card.offsetLeft - gutter) / dist(), 0), 1)
+          requestAnimationFrame(() => window.scrollTo({ top: st.start + p * (st.end - st.start) }))
+        }
+        t.addEventListener('focusin', onFocus)
+        return () => t.removeEventListener('focusin', onFocus)
+      })
 
       gsap.utils.toArray<HTMLElement>('.word').forEach((w) => {
         gsap.fromTo(
@@ -155,44 +190,67 @@ export default function App() {
         })
       })
 
-      gsap.utils.toArray<HTMLElement>('.marquee-track').forEach((el, i) => {
-        gsap.to(el, {
-          xPercent: i % 2 ? 6 : -6,
-          ease: 'none',
-          scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: true },
+      // headings: each line slides up from behind a mask
+      gsap.utils.toArray<HTMLElement>('.split-heading').forEach((h) => {
+        SplitText.create(h, {
+          type: 'lines',
+          mask: 'lines',
+          autoSplit: true,
+          onSplit: (self) =>
+            gsap.from(self.lines, {
+              yPercent: 110,
+              duration: 1.1,
+              ease: 'power4.out',
+              stagger: 0.09,
+              scrollTrigger: { trigger: h, start: 'top 88%' },
+            }),
         })
       })
 
-      const mm = gsap.matchMedia()
-      mm.add('(min-width: 900px)', () => {
-        const t = track.current!
-        const dist = () => t.scrollWidth - window.innerWidth
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: '.work-pin',
-            start: 'top top',
-            end: () => `+=${dist()}`,
-            pin: true,
-            scrub: 0.6,
-            invalidateOnRefresh: true,
+      // sections open up like panels instead of just cutting in
+      const panel = (el: string, trigger: string, end: string) =>
+        gsap.fromTo(
+          el,
+          { clipPath: 'inset(9% 5% 0% 5% round 36px 36px 0px 0px)' },
+          {
+            clipPath: 'inset(0% 0% 0% 0% round 0px 0px 0px 0px)',
+            ease: 'none',
+            scrollTrigger: { trigger, start: 'top bottom', end, scrub: true },
           },
-        })
-        tl.to(t, { x: () => -dist(), ease: 'none' }, 0).to('.work-bar', { scaleX: 1, ease: 'none' }, 0)
+        )
+      panel('.work-pin', '.work', 'top top')
+      panel('.contact', '.contact', 'top 35%')
 
-        // keyboard focus on an off-screen card moves the pinned scroll to it
-        const onFocus = (e: FocusEvent) => {
-          const card = (e.target as HTMLElement).closest<HTMLElement>('.card')
-          const st = tl.scrollTrigger
-          if (!card || !st) return
-          const gutter = parseFloat(getComputedStyle(t).paddingLeft)
-          const p = Math.min(Math.max((card.offsetLeft - gutter) / dist(), 0), 1)
-          requestAnimationFrame(() => window.scrollTo({ top: st.start + p * (st.end - st.start) }))
-        }
-        t.addEventListener('focusin', onFocus)
-        return () => t.removeEventListener('focusin', onFocus)
+      // stack marquees: endless loop, faster while you scroll, paused under the cursor
+      const loops = gsap.utils.toArray<HTMLElement>('.marquee').map((box, i) => {
+        const el = box.querySelector<HTMLElement>('.marquee-track')!
+        const s = { p: i * 9, boost: 0, hold: 1 }
+        const enter = () => (s.hold = 0)
+        const leave = () => (s.hold = 1)
+        box.addEventListener('pointerenter', enter)
+        box.addEventListener('pointerleave', leave)
+        cleanups.push(() => {
+          box.removeEventListener('pointerenter', enter)
+          box.removeEventListener('pointerleave', leave)
+        })
+        return { el, s, dir: i % 2 ? 1 : -1 }
       })
+      const loop = (_: number, dt: number) => {
+        const v = Math.min(Math.abs(lenisRef.current?.velocity ?? 0) * 0.35, 9)
+        loops.forEach(({ el, s, dir }) => {
+          s.boost += (v - s.boost) * 0.08
+          s.p = (s.p + ((2.2 + s.boost) * s.hold * dt) / 1000) % 50
+          gsap.set(el, { xPercent: dir < 0 ? -s.p : s.p - 50 })
+        })
+      }
+      gsap.ticker.add(loop)
+      cleanups.push(() => gsap.ticker.remove(loop))
+
     }, root)
-    return () => ctx.revert()
+    return () => {
+      ctx.revert()
+      cleanups.forEach((f) => f())
+    }
   }, [])
 
   const split = (s: string) =>
@@ -255,7 +313,7 @@ export default function App() {
         <section className="work" id="work">
           <div className="work-pin">
             <div className="work-head">
-              <h2>Three projects, built end to end.</h2>
+              <h2 className="split-heading">Three projects, built end to end.</h2>
               <div className="work-progress" aria-hidden="true"><i className="work-bar" /></div>
             </div>
             <div className="work-track" ref={track}>
@@ -302,7 +360,7 @@ export default function App() {
         </section>
 
         <section className="exp" id="experience">
-          <h2 className="reveal">Where I have worked.</h2>
+          <h2 className="split-heading">Where I have worked.</h2>
           {jobs.map((j) => (
             <article className="job reveal" key={j.company}>
               <i className="row-line" />
@@ -377,7 +435,7 @@ export default function App() {
         </section>
 
         <section className="contact" id="contact">
-          <h2 className="reveal">Let's build something.</h2>
+          <h2 className="split-heading">Let's build something.</h2>
           <Magnetic className="reveal">
             <a className="mail" href={`mailto:${profile.email}`}>{profile.email}</a>
           </Magnetic>
