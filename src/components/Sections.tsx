@@ -458,13 +458,16 @@ function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: str
     </div>
   )
 
+  // Same left edge for the title and the first chip; each category is one straight line.
+  const title = <h3 className="mb-3 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{area}</h3>
+
   if (m === 'off')
     return (
       <div>
-        <h3 className="mb-3 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{area}</h3>
-        <ul className="flex flex-wrap gap-3">
+        {title}
+        <ul className="flex gap-4 overflow-x-auto pb-4 pr-1 pt-1">
           {tools.map((t) => (
-            <li key={t.name}>
+            <li key={t.name} className="shrink-0">
               <ToolChip t={t} />
             </li>
           ))}
@@ -474,8 +477,8 @@ function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: str
 
   return (
     <div ref={box} onPointerEnter={() => (hold.current = true)} onPointerLeave={() => (hold.current = false)}>
-      <h3 className="mb-3 px-6 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink sm:px-12 lg:px-20">{area}</h3>
-      <div className="overflow-hidden py-2 lg:mx-16">
+      {title}
+      <div className="overflow-hidden pb-4 pt-1 [mask-image:linear-gradient(to_right,transparent,#000_3%,#000_97%,transparent)]">
         <motion.div style={{ x }} className="flex w-max">
           {row(half)}
           {row()}
@@ -487,22 +490,19 @@ function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: str
 }
 
 export function Stack() {
-  const { motion: m } = useMotionPref()
   return (
-    <section id="stack" className="relative overflow-hidden bg-bg-2/60 py-20 sm:py-36">
-      <div className="mx-auto max-w-7xl px-6 sm:px-12 lg:px-20">
+    <section id="stack" className="relative overflow-hidden bg-bg-2/60 px-6 py-20 sm:px-12 sm:py-36 lg:px-20">
+      <div className="mx-auto max-w-7xl">
         <SectionHead num="04" kicker="Stack" title="Tools I reach for" />
-      </div>
-      <div className={m === 'off' ? 'mx-auto max-w-7xl space-y-8 px-6 sm:px-12 lg:px-20' : 'space-y-6'}>
-        {stack.map((g, i) => (
-          <MarqueeRow key={g.area} area={g.area} tools={g.tools} reverse={i % 2 === 1} />
-        ))}
-      </div>
-      <div className="mx-auto mt-14 max-w-7xl px-6 sm:px-12 lg:px-20">
-        <Reveal>
-          <div className="relative overflow-hidden rounded-3xl border-2 border-line bg-[#17182c] p-6 text-[#f3eee4] shadow-[6px_6px_0_0_var(--accent)]">
+        <div className="space-y-5">
+          {stack.map((g, i) => (
+            <MarqueeRow key={g.area} area={g.area} tools={g.tools} reverse={i % 2 === 1} />
+          ))}
+        </div>
+        <Reveal className="mt-20 sm:mt-28">
+          <div className="relative mx-auto max-w-3xl overflow-hidden rounded-3xl border-2 border-line bg-[#17182c] px-6 py-10 text-center text-[#f3eee4] shadow-[6px_6px_0_0_var(--accent)] sm:px-12 sm:py-12">
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-sun">How I work</h3>
-            <ul className="mt-5 flex flex-wrap gap-3">
+            <ul className="mt-6 flex flex-wrap justify-center gap-3">
               {practices.map((p) => (
                 <li key={p} className="rounded-full border-2 border-[#f3eee4]/40 px-4 py-1.5 font-display text-lg font-bold">
                   {p}
