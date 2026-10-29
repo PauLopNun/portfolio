@@ -16,7 +16,7 @@
           var dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
           document.documentElement.classList.toggle('dark', dark)
           var m = localStorage.getItem('motion')
-          if (!m) m = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'on'
+          if (!m) m = 'on' // animated by default; the Motion switch in the header turns it off
           document.documentElement.dataset.motion = m
         } catch (e) {}
       })()

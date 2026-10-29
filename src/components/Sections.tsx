@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react"
-import { motion, useInView, useSpring } from "framer-motion"
+import { motion, useAnimationFrame, useInView, useMotionValue, useScroll, useSpring, useVelocity } from "framer-motion"
 import { ArrowUpRight, Check, Copy, Github, Linkedin, Mail } from "lucide-react"
 import { asset, certificates, education, featured, jobs, moreProjects, practices, profile, stack } from "../data"
 import { useMotionPref } from "../theme"
@@ -413,51 +413,102 @@ export function Projects() {
 
 /* Stack */
 
-export function Stack() {
+function ToolChip({ t }: { t: { name: string; icon?: string } }) {
   return (
-    <section id="stack" className={`${shell} bg-bg-2/60`}>
-      <div className={inner}>
-        <SectionHead num="04" kicker="Stack" title="Tools I reach for" />
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {stack.map((g, gi) => (
-            <Reveal key={g.area} delay={(gi % 3) * 0.08} >
-              <div className="sticker h-full rounded-3xl p-6">
-                <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{g.area}</h3>
-                <ul className="mt-5 flex flex-wrap gap-2.5">
-                  {g.tools.map((t) => (
-                    <li
-                      key={t.name}
-                      className="flex items-center gap-2 rounded-xl border-2 border-line bg-bg px-2.5 py-1.5 text-sm font-semibold text-ink transition-transform hover:-translate-y-1 hover:-rotate-2"
-                    >
-                      {t.icon ? (
-                        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-chip p-0.5">
-                          <img src={asset(`/icons/${t.icon}.svg`)} alt="" width={20} height={20} className="h-5 w-5 object-contain" />
-                        </span>
-                      ) : (
-                        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-sun font-mono text-[0.65rem] font-bold text-[#17182c]">
-                          {t.name.slice(0, 2)}
-                        </span>
-                      )}
-                      {t.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Reveal>
+    <span className="flex shrink-0 items-center gap-2 rounded-xl border-2 border-line bg-chip px-3.5 py-2 text-base font-semibold text-[#17182c] shadow-[3px_3px_0_0_var(--shadow)]">
+      {t.icon ? (
+        <img src={asset(`/icons/${t.icon}.svg`)} alt="" width={22} height={22} className="h-[22px] w-[22px] object-contain" />
+      ) : (
+        <span className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-sun font-mono text-[0.6rem] font-bold">{t.name.slice(0, 2)}</span>
+      )}
+      {t.name}
+    </span>
+  )
+}
+
+/* An endless row: drifts on its own, speeds up while you scroll, stops under the cursor. */
+function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: string; icon?: string }[]; reverse: boolean }) {
+  const x = useMotionValue(0)
+  const half = useRef<HTMLDivElement>(null)
+  const hold = useRef(false)
+  const boost = useRef(0)
+  const { motion: m } = useMotionPref()
+  const { scrollY } = useScroll()
+  const velocity = useVelocity(scrollY)
+
+  useAnimationFrame((_, delta) => {
+    if (m === 'off' || !half.current) return
+    const w = half.current.offsetWidth
+    if (!w) return
+    boost.current += (Math.min(Math.abs(velocity.get()) / 40, 18) - boost.current) * 0.08
+    const speed = hold.current ? 0 : 0.035 + boost.current * 0.006
+    let next = x.get() + (reverse ? 1 : -1) * speed * delta
+    if (next <= -w) next += w
+    if (next > 0) next -= w
+    x.set(next)
+  })
+
+  const row = (ref?: React.Ref<HTMLDivElement>) => (
+    <div ref={ref} className="flex shrink-0 gap-4 pr-4">
+      {tools.map((t) => (
+        <ToolChip key={t.name} t={t} />
+      ))}
+    </div>
+  )
+
+  if (m === 'off')
+    return (
+      <div>
+        <h3 className="mb-3 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{area}</h3>
+        <ul className="flex flex-wrap gap-3">
+          {tools.map((t) => (
+            <li key={t.name}>
+              <ToolChip t={t} />
+            </li>
           ))}
-          <Reveal delay={0.1}>
-            <div className="relative h-full overflow-hidden rounded-3xl border-2 border-line bg-[#17182c] p-6 text-[#f3eee4] shadow-[6px_6px_0_0_var(--accent)]">
-              <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-sun">How I work</h3>
-              <ul className="mt-5 flex flex-wrap gap-3">
-                {practices.map((p) => (
-                  <li key={p} className="rounded-full border-2 border-[#f3eee4]/40 px-4 py-1.5 font-display text-lg font-bold">
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Reveal>
-        </div>
+        </ul>
+      </div>
+    )
+
+  return (
+    <div onPointerEnter={() => (hold.current = true)} onPointerLeave={() => (hold.current = false)}>
+      <h3 className="mb-3 px-6 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink sm:px-12 lg:px-20">{area}</h3>
+      <div className="overflow-hidden py-2 lg:mx-16">
+        <motion.div style={{ x }} className="flex w-max">
+          {row(half)}
+          {row()}
+          {row()}
+        </motion.div>
+      </div>
+    </div>
+  )
+}
+
+export function Stack() {
+  const { motion: m } = useMotionPref()
+  return (
+    <section id="stack" className="relative overflow-hidden bg-bg-2/60 py-20 sm:py-36">
+      <div className="mx-auto max-w-7xl px-6 sm:px-12 lg:px-20">
+        <SectionHead num="04" kicker="Stack" title="Tools I reach for" />
+      </div>
+      <div className={m === 'off' ? 'mx-auto max-w-7xl space-y-8 px-6 sm:px-12 lg:px-20' : 'space-y-6'}>
+        {stack.map((g, i) => (
+          <MarqueeRow key={g.area} area={g.area} tools={g.tools} reverse={i % 2 === 1} />
+        ))}
+      </div>
+      <div className="mx-auto mt-14 max-w-7xl px-6 sm:px-12 lg:px-20">
+        <Reveal>
+          <div className="relative overflow-hidden rounded-3xl border-2 border-line bg-[#17182c] p-6 text-[#f3eee4] shadow-[6px_6px_0_0_var(--accent)]">
+            <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-sun">How I work</h3>
+            <ul className="mt-5 flex flex-wrap gap-3">
+              {practices.map((p) => (
+                <li key={p} className="rounded-full border-2 border-[#f3eee4]/40 px-4 py-1.5 font-display text-lg font-bold">
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
       </div>
     </section>
   )
@@ -535,7 +586,6 @@ export function Contact() {
 
   return (
     <section id="contact" className="relative overflow-hidden px-6 pb-16 pt-28 sm:px-12 sm:pt-36 lg:px-20">
-      <div aria-hidden className="hatch-accent pointer-events-none absolute right-16 top-32 hidden h-56 w-56 rotate-12 rounded-[2.5rem] border-2 border-line opacity-60 lg:block" />
       <div className={`${inner} relative`}>
         <Reveal>
           <p className="font-mono text-sm text-accent-ink">
@@ -569,7 +619,7 @@ export function Contact() {
         </Reveal>
 
         <footer className="mt-32 flex flex-col justify-between gap-4 border-t-2 border-line pt-6 font-mono text-xs text-dim sm:flex-row">
-          <p>Designed and built by Pau López Núñez · Next.js, Tailwind CSS and Framer Motion.</p>
+          <p>Designed and built by Pau López Núñez · React, Three.js, Tailwind CSS and Framer Motion.</p>
           <a href="#top" className="font-semibold text-ink hover:text-accent-ink">
             Back to top ↑
           </a>

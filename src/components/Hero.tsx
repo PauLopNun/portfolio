@@ -11,11 +11,12 @@ const Graph = lazy(() => import('./Graph'))
 const ease = [0.2, 0.8, 0.2, 1] as const
 
 function Line({ text, delay }: { text: string; delay: number }) {
+  const { motion: m } = useMotionPref()
   return (
     <span className="block overflow-hidden pb-[0.08em]">
       <motion.span
         className="block"
-        initial={{ y: '110%', rotate: 4 }}
+        initial={m === 'on' ? { y: '110%', rotate: 4 } : false}
         animate={{ y: 0, rotate: 0 }}
         transition={{ delay, duration: 0.9, ease }}
       >

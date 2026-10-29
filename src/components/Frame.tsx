@@ -168,7 +168,6 @@ export function Frame() {
         transition={{ duration: 0.55, ease: [0.76, 0, 0.24, 1] }}
         className="invisible fixed inset-2.5 z-[45] overflow-y-auto rounded-[20px] bg-bg-2 sm:inset-3.5"
       >
-        <div className="dots pointer-events-none absolute right-0 top-0 h-full w-1/3 opacity-15" aria-hidden />
         <div className="relative mx-auto flex min-h-full max-w-6xl flex-col justify-center px-6 pb-12 pt-28 sm:px-12">
           <ul>
             {nav.map((n, i) => (

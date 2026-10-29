@@ -134,8 +134,9 @@ body {
 }
 
 .outline-text {
-  color: transparent;
-  -webkit-text-stroke: 2px var(--ink);
+  color: var(--bg);
+  -webkit-text-stroke: 4px var(--ink);
+  paint-order: stroke fill; /* the fill covers the inner half of the stroke, so overlapping glyph contours do not show */
 }
 
 .display-shadow {
