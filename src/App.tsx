@@ -1,12 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
-import Graph from './components/Graph'
 import Cursor from './components/Cursor'
 import { profile, jobs, education, featured, moreProjects, stack, practices, certificates } from './data'
 
 gsap.registerPlugin(ScrollTrigger)
+
+const Graph = lazy(() => import('./components/Graph'))
 
 const base = import.meta.env.BASE_URL
 const icon = (n: string) => `${base}icons/${n}.svg`
@@ -55,6 +56,26 @@ function Magnetic({ children, className }: { children: React.ReactNode; classNam
 export default function App() {
   const root = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState('')
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && setActive(e.target.id)),
+      { rootMargin: '-45% 0px -50% 0px' },
+    )
+    ;['work', 'experience', 'stack', 'contact'].forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) io.observe(el)
+    })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      io.disconnect()
+    }
+  }, [])
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -79,12 +100,13 @@ export default function App() {
       }
 
       gsap.from('.hero-char', { yPercent: 110, duration: 1.1, ease: 'power4.out', stagger: 0.025, delay: 0.15 })
-      gsap.from('.hero-fade', { opacity: 0, y: 24, duration: 1, ease: 'power3.out', stagger: 0.12, delay: 0.7 })
+      gsap.from('.hero-rise', { y: 24, duration: 0.8, ease: 'power3.out', delay: 0.35 })
+      gsap.from('.hero-fade', { opacity: 0, y: 24, duration: 0.8, ease: 'power3.out', stagger: 0.1, delay: 0.35 })
 
       gsap.utils.toArray<HTMLElement>('.word').forEach((w) => {
         gsap.fromTo(
           w,
-          { opacity: 0.12 },
+          { opacity: 0.4 },
           {
             opacity: 1,
             ease: 'none',
@@ -125,9 +147,7 @@ export default function App() {
       mm.add('(min-width: 900px)', () => {
         const t = track.current!
         const dist = () => t.scrollWidth - window.innerWidth
-        gsap.to(t, {
-          x: () => -dist(),
-          ease: 'none',
+        const tl = gsap.timeline({
           scrollTrigger: {
             trigger: '.work-pin',
             start: 'top top',
@@ -137,6 +157,19 @@ export default function App() {
             invalidateOnRefresh: true,
           },
         })
+        tl.to(t, { x: () => -dist(), ease: 'none' }, 0).to('.work-bar', { scaleX: 1, ease: 'none' }, 0)
+
+        // keyboard focus on an off-screen card moves the pinned scroll to it
+        const onFocus = (e: FocusEvent) => {
+          const card = (e.target as HTMLElement).closest<HTMLElement>('.card')
+          const st = tl.scrollTrigger
+          if (!card || !st) return
+          const gutter = parseFloat(getComputedStyle(t).paddingLeft)
+          const p = Math.min(Math.max((card.offsetLeft - gutter) / dist(), 0), 1)
+          requestAnimationFrame(() => window.scrollTo({ top: st.start + p * (st.end - st.start) }))
+        }
+        t.addEventListener('focusin', onFocus)
+        return () => t.removeEventListener('focusin', onFocus)
       })
     }, root)
     return () => ctx.revert()
@@ -151,28 +184,30 @@ export default function App() {
 
   return (
     <div ref={root}>
+      <a className="skip" href="#about">Skip to content</a>
       <Cursor />
-      <header className="top">
-        <a href="#top" className="logo">PLN</a>
-        <nav>
-          <a href="#work">Work</a>
-          <a href="#experience">Experience</a>
-          <a href="#stack">Stack</a>
-          <a href="#contact">Contact</a>
+      <header className={`top${scrolled ? ' scrolled' : ''}`}>
+        <a href="#top" className="logo" aria-label="PLN, Pau López Núñez, top of page">PLN</a>
+        <nav aria-label="Sections">
+          {['work', 'experience', 'stack', 'contact'].map((id) => (
+            <a key={id} href={`#${id}`} aria-current={active === id ? 'true' : undefined}>
+              {id[0].toUpperCase() + id.slice(1)}
+            </a>
+          ))}
         </nav>
         <Clock />
       </header>
 
       <main id="top">
         <section className="hero">
-          <Graph />
+          <Suspense fallback={null}><Graph /></Suspense>
           <div className="hero-inner">
-            <p className="kicker mono hero-fade">Backend developer · Valencia</p>
+            <p className="kicker hero-fade">{profile.role}</p>
             <h1 aria-label={profile.name}>
               <span className="line" aria-hidden="true">{split('Pau López')}</span>
               <span className="line" aria-hidden="true">{split('Núñez')}</span>
             </h1>
-            <p className="lede hero-fade">
+            <p className="lede hero-rise">
               Event-driven services in Java and Spring Boot, enterprise Oracle and Angular at work, and AWS on the way.
             </p>
             <div className="hero-cta hero-fade">
@@ -199,14 +234,13 @@ export default function App() {
         <section className="work" id="work">
           <div className="work-pin">
             <div className="work-head">
-              <p className="kicker mono">Selected work</p>
               <h2>Three projects, built end to end.</h2>
+              <div className="work-progress" aria-hidden="true"><i className="work-bar" /></div>
             </div>
             <div className="work-track" ref={track}>
-              {featured.map((p, i) => (
+              {featured.map((p) => (
                 <article className="card" key={p.name} data-hover>
-                  <span className="num mono">0{i + 1}</span>
-                  <p className="mono ctx">{p.context}</p>
+                  <p className="ctx">{p.context}</p>
                   <h3>{p.name}</h3>
                   <p className="sum">{p.summary}</p>
                   <ul>
@@ -231,7 +265,7 @@ export default function App() {
         </section>
 
         <section className="more">
-          <p className="kicker mono reveal">More on GitHub</p>
+          <h2 className="label reveal">More on GitHub</h2>
           <ul>
             {moreProjects.map((p) => (
               <li key={p.name} className="reveal">
@@ -247,7 +281,6 @@ export default function App() {
         </section>
 
         <section className="exp" id="experience">
-          <p className="kicker mono reveal">Experience</p>
           <h2 className="reveal">Where I have worked.</h2>
           {jobs.map((j) => (
             <article className="job reveal" key={j.company}>
@@ -276,7 +309,7 @@ export default function App() {
         </section>
 
         <section className="stack" id="stack">
-          <p className="kicker mono reveal">Stack</p>
+          <h2 className="label reveal">Stack</h2>
           {stack.map((g, i) => (
             <div className="marquee" key={g.area}>
               <p className="mono area">{g.area}</p>
@@ -294,21 +327,21 @@ export default function App() {
 
         <section className="cred">
           <div className="cred-col reveal">
-            <p className="kicker mono">Education</p>
+            <h2 className="label">Education</h2>
             {education.map((e) => (
               <div className="edu" key={e.title}>
                 <span className="mono">{e.period}</span>
-                <h4>{e.title}</h4>
+                <h3>{e.title}</h3>
                 <p>{e.place}. {e.note}</p>
                 {e.href && <a href={e.href} target="_blank" rel="noreferrer">{e.linkLabel} ↗</a>}
               </div>
             ))}
           </div>
           <div className="cred-col reveal">
-            <p className="kicker mono">Certifications</p>
+            <h2 className="label">Certifications</h2>
             {certificates.map((g) => (
               <div className="cert-group" key={g.group}>
-                <h4>{g.group}</h4>
+                <h3>{g.group}</h3>
                 <ul>
                   {g.items.map((c) => (
                     <li key={c.name}>
@@ -323,7 +356,6 @@ export default function App() {
         </section>
 
         <section className="contact" id="contact">
-          <p className="kicker mono reveal">Contact</p>
           <h2 className="reveal">Let's build something.</h2>
           <Magnetic className="reveal">
             <a className="mail" href={`mailto:${profile.email}`}>{profile.email}</a>
@@ -337,7 +369,7 @@ export default function App() {
 
       <footer>
         <span className="mono">© {new Date().getFullYear()} Pau López Núñez</span>
-        <span className="mono">Portfolio v2 · React, Three.js, GSAP</span>
+        <span className="mono">Built with React, Three.js and GSAP</span>
       </footer>
     </div>
   )
