@@ -28,7 +28,7 @@ const VERT = /* glsl */ `
   attribute vec2 aP; // x: seed, y: size in the portrait
   attribute vec4 aCol; // rgb of the portrait pixel, a = how opaque it is (fades out at the edges)
   varying vec4 vCol;
-  varying float vAcc, vMix, vNoise;
+  varying float vMix, vNoise;
 
   void main() {
     float seed = aP.x;
@@ -52,25 +52,22 @@ const VERT = /* glsl */ `
     gl_PointSize = uRound > 0.5 ? max(px, 1.4) : ceil(px) + 1.0; // square pixels: whole device pixels, overlapping by one, so no seams
     vCol = aCol;
     vNoise = fract(seed * 91.7);
-    vAcc = step(0.93, fract(seed * 7.13));
     vMix = e;
   }
 `
 
 const FRAG = /* glsl */ `
   uniform float uRound;
-  uniform vec3 uLogo, uAccent;
+  uniform vec3 uLogo;
   varying vec4 vCol;
-  varying float vAcc, vMix, vNoise;
+  varying float vMix, vNoise;
   void main() {
     float d = length(gl_PointCoord - 0.5);
     if (uRound > 0.5 && d > 0.5) discard;
     float a = uRound > 0.5 ? smoothstep(0.5, 0.36, d) : 1.0;
     vec3 skin = (vCol.rgb * 1.05 + 0.01) * (0.92 + 0.16 * vNoise);
     vec3 logo = uLogo * (0.82 + 0.18 * vNoise);
-    vec3 accent = uAccent;
     vec3 col = mix(skin, logo, vMix);
-    col = mix(col, accent, vAcc * (0.1 + 0.9 * vMix));
     gl_FragColor = vec4(col, a * mix(vCol.a, 1.0, vMix));
   }
 `
@@ -134,7 +131,6 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
       uLogoSize: { value: PIXEL ? CELL * 1.12 : small ? 0.026 : 0.02 },
       uRound: { value: PIXEL ? 0 : 1 },
       uLogo: { value: cssColor('--ink', '#f3eee4') },
-      uAccent: { value: cssColor('--accent', '#ff6b3d') },
       uMouse: { value: new THREE.Vector2(999, 999) },
     }
     const material = new THREE.ShaderMaterial({

@@ -81,7 +81,7 @@ export function Marquee() {
   )
   return (
     <div className="relative z-10 -my-4 overflow-hidden py-10" aria-hidden>
-      <div className="-mx-4 -rotate-2 border-y-2 border-line bg-accent py-4 text-on-accent">
+      <div className="-mx-4 border-y-2 border-line bg-accent py-4 text-on-accent">
         <div className="anim-marquee flex w-max">
           {row}
           {row}
@@ -430,6 +430,8 @@ function ToolChip({ t }: { t: { name: string; icon?: string } }) {
 function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: string; icon?: string }[]; reverse: boolean }) {
   const x = useMotionValue(0)
   const half = useRef<HTMLDivElement>(null)
+  const box = useRef<HTMLDivElement>(null)
+  const visible = useInView(box) // off screen rows do not animate
   const hold = useRef(false)
   const boost = useRef(0)
   const { motion: m } = useMotionPref()
@@ -437,7 +439,7 @@ function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: str
   const velocity = useVelocity(scrollY)
 
   useAnimationFrame((_, delta) => {
-    if (m === 'off' || !half.current) return
+    if (m === 'off' || !visible || !half.current) return
     const w = half.current.offsetWidth
     if (!w) return
     boost.current += (Math.min(Math.abs(velocity.get()) / 40, 18) - boost.current) * 0.08
@@ -471,7 +473,7 @@ function MarqueeRow({ area, tools, reverse }: { area: string; tools: { name: str
     )
 
   return (
-    <div onPointerEnter={() => (hold.current = true)} onPointerLeave={() => (hold.current = false)}>
+    <div ref={box} onPointerEnter={() => (hold.current = true)} onPointerLeave={() => (hold.current = false)}>
       <h3 className="mb-3 px-6 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink sm:px-12 lg:px-20">{area}</h3>
       <div className="overflow-hidden py-2 lg:mx-16">
         <motion.div style={{ x }} className="flex w-max">
