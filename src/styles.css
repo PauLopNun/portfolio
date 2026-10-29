@@ -62,7 +62,8 @@ html.has-cursor, html.has-cursor a, html.has-cursor button { cursor: none; }
   position: fixed; inset: 0 0 auto 0; z-index: 50;
   display: flex; justify-content: space-between; align-items: center;
   padding: 18px var(--gutter);
-  mix-blend-mode: difference;
+  background: linear-gradient(rgba(10, 10, 11, 0.85), rgba(10, 10, 11, 0));
+  backdrop-filter: blur(8px);
   color: #fff;
 }
 .top .mono { color: #fff; }
@@ -167,7 +168,7 @@ html.has-cursor, html.has-cursor a, html.has-cursor button { cursor: none; }
 .role { color: var(--accent); font-weight: 500; }
 
 /* stack */
-.stack { padding: 12vh 0; overflow: hidden; }
+.stack { padding: 12vh 0 4vh; overflow: hidden; }
 .stack .kicker { padding: 0 var(--gutter); }
 .marquee { padding: 14px 0; }
 .area { padding: 0 var(--gutter); margin-bottom: 10px; }
