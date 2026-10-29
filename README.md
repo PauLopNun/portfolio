@@ -1,12 +1,12 @@
 # Portfolio v2
 
-Second take on my portfolio, built as a design experiment next to [the original](https://github.com/PauLopNun/portfolio). Same content, new concept: the hero is a live graph of services passing events between them, the way my backends work.
+Second take on my portfolio, built next to [the original](https://github.com/PauLopNun/portfolio). Same content and the same neo-brutalist look (cream paper, ink outlines, hard shadows, light and dark themes), with a different hero: my portrait is made of pixels that dissolve and rebuild themselves as the GitHub mark while you scroll.
 
 - React 19, TypeScript, Vite
-- Three.js for the hero graph, GSAP ScrollTrigger and Lenis for scroll
-- Hero graph lazy-loaded (Three.js in its own chunk), labelled service nodes, pulses that react to the cursor or a tap, paused when off screen
-- Pinned horizontal scroll for projects, magnetic buttons, custom cursor
-- Respects `prefers-reduced-motion`; vertical layout on mobile
+- Three.js for the hero: one shader-driven particle system (portrait pixels ⇄ GitHub mark), lazy-loaded, paused off screen
+- GSAP ScrollTrigger + SplitText and Lenis: pinned hero and horizontal project scroll, line-by-line headings, panel transitions, scroll-reactive marquees
+- Light/dark switch (remembered), pixel-art or fine-dot portrait (`PIXEL` in `src/components/Graph.tsx`)
+- Respects `prefers-reduced-motion` (static portrait, no pinned scroll); layout follows the aspect ratio (phones, tablets, landscape)
 
 ```bash
 npm install
@@ -16,4 +16,4 @@ npm run build   # BASE_PATH=/portfolio-v2/ npm run build for GitHub Pages
 
 ## Deploy
 
-`.github/workflows/pages.yml` builds with `BASE_PATH=/portfolio-v2/` and publishes `dist` to GitHub Pages on push to main/master. In the repo settings, Pages source must be "GitHub Actions". The canonical and Open Graph URLs in `index.html` assume `https://paulopnun.github.io/portfolio-v2/`.
+`.github/workflows/pages.yml` builds with `BASE_PATH=/portfolio-v2/` and publishes `dist` to GitHub Pages on push to `main`. In the repo settings, Pages source must be "GitHub Actions". The canonical and Open Graph URLs in `index.html` assume `https://paulopnun.github.io/portfolio-v2/`.

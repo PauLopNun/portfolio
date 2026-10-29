@@ -17,18 +17,6 @@ const icon = (n: string) => `${base}icons/${n}.svg`
 const STATEMENT =
   'I build backends that talk through events. Enterprise Java, Spring Boot, Angular and Oracle PL/SQL by day, hexagonal architecture, DDD and RabbitMQ in the services I design, and AWS in the evenings.'
 
-function Clock() {
-  const [t, setT] = useState('')
-  useEffect(() => {
-    const f = () =>
-      setT(new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' }))
-    f()
-    const id = setInterval(f, 15000)
-    return () => clearInterval(id)
-  }, [])
-  return <span className="mono">Valencia {t}</span>
-}
-
 function Magnetic({ children, className }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null)
   useEffect(() => {
@@ -59,6 +47,17 @@ export default function App() {
   const root = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
   const lenisRef = useRef<Lenis | null>(null)
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
+  const flipTheme = () => {
+    const next = !dark
+    setDark(next)
+    document.documentElement.classList.toggle('dark', next)
+    try {
+      localStorage.setItem('theme', next ? 'dark' : 'light')
+    } catch {
+      /* storage can be blocked; the theme just will not persist */
+    }
+  }
   const [active, setActive] = useState('')
   const [scrolled, setScrolled] = useState(false)
 
@@ -159,7 +158,7 @@ export default function App() {
       gsap.utils.toArray<HTMLElement>('.word').forEach((w) => {
         gsap.fromTo(
           w,
-          { opacity: 0.4 },
+          { opacity: 0.55 },
           {
             opacity: 1,
             ease: 'none',
@@ -271,12 +270,17 @@ export default function App() {
             </a>
           ))}
         </nav>
-        <Clock />
+        <div className="top-right">
+          <button className="theme" type="button" role="switch" aria-checked={dark} aria-label="Dark mode" onClick={flipTheme}>
+            <i />
+          </button>
+          <a className="btn sm" href={`mailto:${profile.email}`}>Hire me</a>
+        </div>
       </header>
 
       <main id="top">
         <section className="hero">
-          <Suspense fallback={null}><Graph /></Suspense>
+          <Suspense fallback={null}><Graph key={dark ? 'dark' : 'light'} dark={dark} /></Suspense>
           <div className="hero-inner">
             <p className="kicker hero-fade">{profile.role}</p>
             <h1 aria-label={profile.name}>
@@ -318,8 +322,12 @@ export default function App() {
               <div className="work-progress" aria-hidden="true"><i className="work-bar" /></div>
             </div>
             <div className="work-track" ref={track}>
-              {featured.map((p) => (
+              {featured.map((p, i) => (
                 <article className="card" key={p.name} data-hover>
+                  <div className="banner" aria-hidden="true">
+                    <span>0{i + 1}</span>
+                  </div>
+                  <div className="card-body">
                   <p className="ctx">{p.context}</p>
                   <h3>{p.name}</h3>
                   <p className="sum">{p.summary}</p>
@@ -334,9 +342,10 @@ export default function App() {
                     ))}
                   </div>
                   <div className="links">
-                    {p.links.map((l) => (
-                      <a key={l.href} href={l.href} target="_blank" rel="noreferrer">{l.label} ↗</a>
+                    {p.links.map((l, k) => (
+                      <a key={l.href} className={`btn sm${k ? ' ghost' : ''}`} href={l.href} target="_blank" rel="noreferrer">{l.label} ↗</a>
                     ))}
+                  </div>
                   </div>
                 </article>
               ))}
@@ -350,11 +359,13 @@ export default function App() {
             {moreProjects.map((p) => (
               <li key={p.name} className="reveal">
                 <a href={p.href} target="_blank" rel="noreferrer">
+                  <span className="more-top">
+                    <img className="more-icon" src={icon('github')} alt="" />
+                    <span className="more-arrow" aria-hidden="true">↗</span>
+                  </span>
                   <span className="more-name">{p.name}</span>
                   <span className="more-text">{p.text}</span>
-                  <span className="more-arrow">↗</span>
                 </a>
-                <i className="row-line" />
               </li>
             ))}
           </ul>
@@ -364,7 +375,6 @@ export default function App() {
           <h2 className="split-heading">Where I have worked.</h2>
           {jobs.map((j) => (
             <article className="job reveal" key={j.company}>
-              <i className="row-line" />
               <div className="job-meta mono">
                 <span>{j.period}</span>
                 <span>{j.place}</span>
@@ -396,7 +406,7 @@ export default function App() {
               <div className="marquee-track" style={{ flexDirection: i % 2 ? 'row-reverse' : 'row' }}>
                 {[...g.tools, ...g.tools].map((t, k) => (
                   <span className="tool" key={t.name + k}>
-                    {t.icon && <img src={icon(t.icon)} alt="" style={t.invert ? { filter: 'invert(1)' } : undefined} />}
+                    {t.icon && <img src={icon(t.icon)} alt="" />}
                     {t.name}
                   </span>
                 ))}
@@ -441,8 +451,8 @@ export default function App() {
             <a className="mail" href={`mailto:${profile.email}`}>{profile.email}</a>
           </Magnetic>
           <div className="social reveal">
-            <a href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>
-            <a href={profile.github} target="_blank" rel="noreferrer">GitHub ↗</a>
+            <a className="btn ghost" href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>
+            <a className="btn ghost" href={profile.github} target="_blank" rel="noreferrer">GitHub ↗</a>
           </div>
         </section>
       </main>

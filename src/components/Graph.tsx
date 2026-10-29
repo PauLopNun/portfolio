@@ -26,8 +26,8 @@ const VERT = /* glsl */ `
   attribute vec3 aA;
   attribute vec3 aB;
   attribute vec2 aP; // x: seed, y: size in the portrait
-  attribute vec3 aCol;
-  varying vec3 vCol;
+  attribute vec4 aCol; // rgb of the portrait pixel, a = how opaque it is (fades out at the edges)
+  varying vec4 vCol;
   varying float vAcc, vMix, vNoise;
 
   void main() {
@@ -59,22 +59,30 @@ const VERT = /* glsl */ `
 
 const FRAG = /* glsl */ `
   uniform float uRound;
-  varying vec3 vCol;
+  uniform vec3 uLogo, uAccent;
+  varying vec4 vCol;
   varying float vAcc, vMix, vNoise;
   void main() {
     float d = length(gl_PointCoord - 0.5);
     if (uRound > 0.5 && d > 0.5) discard;
     float a = uRound > 0.5 ? smoothstep(0.5, 0.36, d) : 1.0;
-    vec3 skin = (vCol * 1.1 + 0.01) * (0.9 + 0.2 * vNoise);
-    vec3 logo = vec3(0.953, 0.933, 0.894) * (0.8 + 0.2 * vNoise);
-    vec3 accent = vec3(1.0, 0.42, 0.24);
+    vec3 skin = (vCol.rgb * 1.05 + 0.01) * (0.92 + 0.16 * vNoise);
+    vec3 logo = uLogo * (0.82 + 0.18 * vNoise);
+    vec3 accent = uAccent;
     vec3 col = mix(skin, logo, vMix);
     col = mix(col, accent, vAcc * (0.1 + 0.9 * vMix));
-    gl_FragColor = vec4(col, a);
+    gl_FragColor = vec4(col, a * mix(vCol.a, 1.0, vMix));
   }
 `
 
-export default function Graph() {
+// '#rrggbb' → 0..1 components, as written (no colour-space conversion: the shader outputs raw sRGB like the page)
+const cssColor = (name: string, fallback: string) => {
+  const hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+  const n = parseInt(hex.replace('#', ''), 16)
+  return new THREE.Vector3(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255)
+}
+
+export default function Graph({ dark }: { dark: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -106,7 +114,7 @@ export default function Graph() {
       const halfW = halfH * aspect
       if (aspect < 1.1) {
         home.x = 0
-        home.y = 0.8 * halfH - PORTRAIT / 2
+        home.y = 0.8 * halfH - PORTRAIT / 2 + 0.6
         end.x = 0
         end.y = 0.75 * halfH - LOGO / 2
       } else {
@@ -125,6 +133,8 @@ export default function Graph() {
       uStrength: { value: 1 },
       uLogoSize: { value: PIXEL ? CELL * 1.12 : small ? 0.034 : 0.028 },
       uRound: { value: PIXEL ? 0 : 1 },
+      uLogo: { value: cssColor('--logo', '#f3eee4') },
+      uAccent: { value: cssColor('--accent', '#ff6b3d') },
       uMouse: { value: new THREE.Vector2(999, 999) },
     }
     const material = new THREE.ShaderMaterial({
@@ -181,7 +191,7 @@ export default function Graph() {
         const pg = px[i + 1] / 255
         const pb = px[i + 2] / 255
         // the backdrop is a neutral grey; warm skin shadows are not, so the fill cannot leak into the neck
-        const neutral = Math.abs(pr - pb) < 0.04 && Math.abs(pg - (pr + pb) / 2) < 0.04
+        const neutral = Math.abs(pr - pb) < 0.06 && Math.abs(pg - (pr + pb) / 2) < 0.05
         return (
           neutral &&
           Math.hypot(
@@ -232,12 +242,12 @@ export default function Graph() {
           const fade = 1 - smooth(radial, 0.7, 1.02)
           const isBackdrop = backdrop[y * N + x] === 1
           mask.data[i + 3] = isBackdrop ? 0 : 255 * fade
-          if (isBackdrop || rand() < 1 - fade) continue
+          if (isBackdrop || (!PIXEL && rand() < 1 - fade)) continue // pixel mode fades by colour instead, see below
           const jx = PIXEL ? 0 : (rand() - 0.5) * CELL * 0.5
           const jy = PIXEL ? 0 : (rand() - 0.5) * CELL * 0.5
           const half = PIXEL ? 0.5 / N : 0 // pixels sit on cell centres
           A.push((u + half - 0.5) * PORTRAIT + jx, (0.5 - v - half) * PORTRAIT + jy, 0)
-          col.push(r, gg, b)
+          col.push(r, gg, b, PIXEL ? fade : 1) // pixel mode fades the edges out with alpha
           lum.push(0.2126 * r + 0.7152 * gg + 0.0722 * b)
         }
       const M = lum.length
@@ -282,7 +292,7 @@ export default function Graph() {
       geo.setAttribute('aA', new THREE.BufferAttribute(new Float32Array(A), 3))
       geo.setAttribute('aB', new THREE.BufferAttribute(aB, 3))
       geo.setAttribute('aP', new THREE.BufferAttribute(aP, 2))
-      geo.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(col), 3))
+      geo.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(col), 4))
 
       // the photo itself, cut out and sitting just behind the particles: it fills the gaps between dots
       const T = 720
@@ -333,7 +343,7 @@ export default function Graph() {
     img.onload = loaded
     logo.onload = loaded
     logo.onerror = loaded
-    img.src = `${base}images/portrait.webp`
+    img.src = `${base}images/${dark ? 'portrait.webp' : 'portrait-light.webp'}` // the photo whose backdrop matches the theme
     logo.src = `${base}icons/github.svg`
 
     // ---- viewport + pointer
@@ -387,7 +397,7 @@ export default function Graph() {
       underGeo?.dispose()
       renderer.dispose()
     }
-  }, [])
+  }, [dark])
 
   return (
     <div className="graph" role="img" aria-label="Portrait of Pau López Núñez that dissolves and rebuilds itself as the GitHub logo">
