@@ -1,6 +1,6 @@
 
-import { createRef, useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode, type RefObject } from "react"
-import { motion, useAnimationFrame, useInView, useMotionValue, useScroll, useSpring, useTransform, useVelocity } from "framer-motion"
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react"
+import { motion, useAnimationFrame, useInView, useMotionValue, useScroll, useSpring, useVelocity } from "framer-motion"
 import { ArrowUpRight, Check, Copy, Github, Linkedin, Mail } from "lucide-react"
 import { asset, certificates, education, featured, jobs, moreProjects, practices, profile, stack } from "../data"
 import { useMotionPref } from "../theme"
@@ -229,45 +229,11 @@ export function About() {
 
 /* Experience */
 
-// the pinned stack needs room: wide and tall enough for three cards with their tabs
-const STACK_QUERY = "(min-width: 768px) and (min-height: 720px)"
-
-function useWide() {
-  const [wide, setWide] = useState(() => window.matchMedia(STACK_QUERY).matches)
-  useEffect(() => {
-    const mq = window.matchMedia(STACK_QUERY)
-    const on = () => setWide(mq.matches)
-    mq.addEventListener("change", on)
-    return () => mq.removeEventListener("change", on)
-  }, [])
-  return wide
-}
-
-function ExperienceCard({
-  job,
-  i,
-  self,
-  next,
-}: {
-  job: (typeof jobs)[number]
-  i: number
-  self: RefObject<HTMLLIElement | null>
-  next?: RefObject<HTMLLIElement | null>
-}) {
-  const { motion: m } = useMotionPref()
-  const wide = useWide()
-  // progress of the NEXT card travelling up to its pinned spot (stays at 1 once pinned)
-  const { scrollYProgress } = useScroll({ target: next ?? self, offset: ["start end", "start 220px"] })
-  const scale = useTransform(scrollYProgress, [0, 1], [1, next ? 0.96 : 1])
-  const animate = m === "on" && wide && !!next
-
+function ExperienceCard({ job, i }: { job: (typeof jobs)[number]; i: number }) {
   return (
-    <li ref={self} className="exp-card" style={{ top: `calc(6.5rem + ${i * 4.5}rem)` }}>
+    <li>
       <Reveal>
-        <motion.article
-          style={animate ? { scale, transformOrigin: "50% 0%" } : undefined}
-          className="sticker relative grid gap-6 rounded-3xl p-6 sm:p-8 md:grid-cols-[13rem_1fr]"
-        >
+        <article className="sticker sticker-hover grid gap-6 rounded-3xl p-6 sm:p-8 md:grid-cols-[13rem_1fr]">
           <div>
             <p className="mb-3 font-display text-5xl font-extrabold leading-none tracking-[0.06em] text-card [-webkit-text-stroke:4px_var(--ink)] [paint-order:stroke_fill]">
               0{i + 1}
@@ -291,22 +257,20 @@ function ExperienceCard({
               ))}
             </ul>
           </div>
-        </motion.article>
+        </article>
       </Reveal>
     </li>
   )
 }
 
 export function Experience() {
-  const refs = useMemo(() => jobs.map(() => createRef<HTMLLIElement>()), [])
   return (
     <section id="experience" className={`${shell} bg-bg-2/60`}>
       <div className={inner}>
         <SectionHead num="02" kicker="Experience" title="Where I've shipped" />
-        {/* Cards pin under the header and stack on top of each other while scrolling */}
-        <ol className="space-y-8">
+        <ol className="space-y-8 sm:space-y-10">
           {jobs.map((job, i) => (
-            <ExperienceCard key={job.company} job={job} i={i} self={refs[i]} next={refs[i + 1]} />
+            <ExperienceCard key={job.company} job={job} i={i} />
           ))}
         </ol>
         <Reveal className="mt-12">
@@ -376,8 +340,8 @@ export function Projects() {
         <SectionHead num="03" kicker="Projects" title="Things I've built" />
         <div className="space-y-24 sm:space-y-32">
           {featured.map((p, i) => (
-            <article key={p.name} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
-              <Reveal className={i % 2 ? "lg:order-2" : ""}>
+            <article key={p.name} className="grid items-start gap-10 lg:grid-cols-2 lg:gap-20">
+              <Reveal className={`lg:sticky lg:top-28 ${i % 2 ? "lg:order-2" : ""}`}>
                 <Tilt href={p.links[0].href} label={`${p.name} on GitHub`}>
                   <Cover repo={p.repo} />
                 </Tilt>

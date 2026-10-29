@@ -121,19 +121,16 @@ export function Hero() {
         </motion.div>
 
         {pinned && (
-          <motion.div
-            style={{ opacity: afterOpacity, y: afterY, visibility: afterVisibility }}
-            className="absolute inset-x-0 bottom-[12svh] z-10 px-6 sm:px-12 lg:px-20"
-          >
-            <div className="mx-auto max-w-7xl">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-end px-6 pb-[14svh] sm:px-12 lg:items-center lg:px-20 lg:pb-0">
+            <motion.div style={{ opacity: afterOpacity, y: afterY, visibility: afterVisibility }} className="pointer-events-auto mx-auto w-full max-w-7xl">
               <p className="display-shadow max-w-[14ch] font-display text-[clamp(2.4rem,6vw,5.75rem)] font-extrabold leading-[0.95] tracking-[-0.04em] text-ink">
                 See the code on GitHub.
               </p>
               <a href={profile.github} target="_blank" rel="noopener noreferrer" className="btn btn-accent mt-8">
                 {profile.github.replace('https://', '')} <ArrowUpRight className="h-4 w-4" />
               </a>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         )}
 
         <motion.a
