@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { heroState } from '../heroState'
 
 // Services named in the Transport Service project (src/data.ts).
-const LABELS = ['Transport', 'RabbitMQ', 'Time', 'Warehouse', 'Shipment']
+const LABELS = ['RabbitMQ', 'Transport', 'Time', 'Warehouse', 'Shipment']
 const FOV = 50
 const TAN = Math.tan((FOV / 2) * (Math.PI / 180))
 
@@ -22,14 +22,14 @@ const smooth = (x: number, a: number, b: number) => {
 }
 
 const VERT = /* glsl */ `
-  uniform float uProg, uTime, uPR, uScale, uStrength;
+  uniform float uProg, uTime, uPR, uScale, uStrength, uGraphSize;
   uniform vec2 uMouse;
   attribute vec3 aA;
   attribute vec3 aEA;
   attribute vec3 aEB;
   attribute vec4 aP; // x: start along edge, y: speed, z: seed, w: size
   attribute float aLum;
-  varying float vLum, vAcc, vMix;
+  varying float vLum, vAcc, vMix, vNode;
 
   void main() {
     float seed = aP.z;
@@ -38,7 +38,8 @@ const VERT = /* glsl */ `
 
     float t = fract(aP.x + uTime * aP.y);
     vec3 B = mix(aEA, aEB, t);
-    float ca = cos(uTime * 0.07), sa = sin(uTime * 0.07);
+    float ang = sin(uTime * 0.12) * 0.45;
+    float ca = cos(ang), sa = sin(ang);
     B = vec3(B.x * ca + B.z * sa, B.y, -B.x * sa + B.z * ca);
 
     float lt = clamp(uProg * 1.7 - seed * 0.7, 0.0, 1.0);
@@ -53,7 +54,8 @@ const VERT = /* glsl */ `
 
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
-    gl_PointSize = aP.w * mix(1.0, 0.62, e) * uScale * uPR / -mv.z;
+    vNode = step(length(aEB - aEA), 0.0001);
+    gl_PointSize = max(mix(aP.w, uGraphSize, e) * (1.0 + vNode * e * 0.9) * uScale * uPR / -mv.z, 1.4);
     vLum = aLum;
     vAcc = step(0.9, fract(seed * 7.13));
     vMix = e;
@@ -61,16 +63,17 @@ const VERT = /* glsl */ `
 `
 
 const FRAG = /* glsl */ `
-  varying float vLum, vAcc, vMix;
+  varying float vLum, vAcc, vMix, vNode;
   void main() {
     float d = length(gl_PointCoord - 0.5);
     if (d > 0.5) discard;
-    float a = smoothstep(0.5, 0.2, d);
-    vec3 skin = vec3(0.953, 0.933, 0.894) * (0.16 + pow(vLum, 0.8) * 1.0);
+    float a = smoothstep(0.5, 0.36, d);
+    vec3 skin = vec3(0.953, 0.933, 0.894) * (0.2 + pow(vLum, 0.75) * 1.1);
     vec3 graph = vec3(0.953, 0.933, 0.894) * 0.55;
     vec3 accent = vec3(1.0, 0.42, 0.24);
     vec3 col = mix(skin, graph, vMix);
-    col = mix(col, accent, vAcc * (0.12 + 0.88 * vMix));
+    col = mix(col, accent, vAcc * (0.12 + 0.88 * vMix) * (1.0 - vNode));
+    col = mix(col, vec3(0.953, 0.933, 0.894), vNode * vMix);
     gl_FragColor = vec4(col, a);
   }
 `
@@ -83,10 +86,9 @@ export default function Graph() {
     const canvas = canvasRef.current!
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const small = window.innerWidth < 700
-    const N = small ? 120 : 200 // sampling grid of the portrait
+    const N = small ? 170 : 280 // sampling grid of the portrait
     const PORTRAIT = small ? 5.4 : 6.2
-    const GRAPH_SCALE = small ? 0.62 : 1
-    const NODES = small ? 38 : 54
+    const GRAPH_SCALE = small ? 0.5 : 1
     const rand = rng(7)
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'low-power' })
@@ -98,53 +100,75 @@ export default function Graph() {
     scene.add(group)
     const home = small ? { x: 0, y: 2.6 } : { x: 3.0, y: -0.1 }
 
-    // ---- service graph (same construction as before, baked at a scale that fits the viewport)
-    const pts: THREE.Vector3[] = []
-    for (let i = 0; i < NODES; i++) {
-      const u = rand() * Math.PI * 2
-      const v = Math.acos(2 * rand() - 1)
-      const r = 2.2 + rand() * 2.6
-      pts.push(
-        new THREE.Vector3(
-          r * Math.sin(v) * Math.cos(u) * 1.35,
-          r * Math.sin(v) * Math.sin(u) * 0.85,
-          r * Math.cos(v),
-        ).multiplyScalar(GRAPH_SCALE),
-      )
+    // ---- service graph: a RabbitMQ broker in the middle and one small cluster per service around it
+    // (the Transport service talks to the other services only through RabbitMQ events)
+    const S = GRAPH_SCALE
+    const end = small ? { x: 0, y: 1.0 } : { x: 1.5, y: 0.3 }
+    type GNode = { p: THREE.Vector3; w: number; label?: string }
+    const nodes: GNode[] = []
+    const edges: { a: number; b: number; bus: boolean }[] = []
+    const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z)
+    const add = (p: THREE.Vector3, w: number, label?: string) => nodes.push({ p: p.multiplyScalar(S), w, label }) - 1
+    const link = (x: number, y: number, bus = false) => edges.push({ a: x, b: y, bus })
+
+    const hub = add(V(0, 0, 0), 90, 'RabbitMQ')
+    const ring: number[] = []
+    for (let k = 0; k < 6; k++) {
+      const t = (k / 6) * Math.PI * 2
+      ring.push(add(V(Math.cos(t) * 0.8, Math.sin(t) * 0.5, Math.sin(t) * 0.7), 10))
+      link(hub, ring[k])
     }
-    const edges: [number, number][] = []
-    const adj: number[][] = Array.from({ length: NODES }, () => [])
-    const pairs: [number, number, number][] = []
-    for (let i = 0; i < NODES; i++) for (let j = i + 1; j < NODES; j++) pairs.push([i, j, pts[i].distanceTo(pts[j])])
-    pairs.sort((a, b) => a[2] - b[2])
-    for (const [i, j, d] of pairs) {
-      if (d > 3.1 * GRAPH_SCALE) break
-      if (adj[i].length < 4 && adj[j].length < 4) {
-        adj[i].push(edges.length)
-        adj[j].push(edges.length)
-        edges.push([i, j])
+    ring.forEach((n, k) => link(n, ring[(k + 1) % 6]))
+
+    const services: { name?: string; pos: THREE.Vector3 }[] = [
+      { name: 'Transport', pos: V(-4.3, -0.5, 0.8) },
+      { name: 'Time', pos: V(-1.8, 2.2, -1.0) },
+      { name: 'Warehouse', pos: V(3.7, 1.8, 0.5) },
+      { name: 'Shipment', pos: V(4.5, -1.8, -0.6) },
+      { pos: V(0.6, -2.6, 1.0) },
+    ]
+    services.forEach(({ name, pos }) => {
+      const c = add(pos.clone(), 70, name)
+      const sats: number[] = []
+      for (let k = 0; k < 5; k++) {
+        const t = (k / 5) * Math.PI * 2 + 0.4
+        sats.push(add(pos.clone().add(V(Math.cos(t) * 0.7, Math.sin(t) * 0.7, Math.sin(t * 2) * 0.35)), 10))
+        link(c, sats[k])
+      }
+      sats.forEach((n, k) => link(n, sats[(k + 1) % 5]))
+      link(hub, c, true)
+      // second bus line: nearest broker node ↔ nearest satellite
+      let best: [number, number, number] = [ring[0], sats[0], Infinity]
+      for (const rn of ring) for (const sn of sats) {
+        const d = nodes[rn].p.distanceTo(nodes[sn].p)
+        if (d < best[2]) best = [rn, sn, d]
+      }
+      link(best[0], best[1], true)
+    })
+
+    const elen = edges.map((e) => nodes[e.a].p.distanceTo(nodes[e.b].p))
+    const picker = (w: number[]) => {
+      const cum: number[] = []
+      w.reduce((sum, x, i) => (cum[i] = sum + x), 0)
+      const tot = cum[cum.length - 1]
+      return () => {
+        const x = rand() * tot
+        let lo = 0
+        let hi = cum.length - 1
+        while (lo < hi) {
+          const m = (lo + hi) >> 1
+          if (cum[m] < x) lo = m + 1
+          else hi = m
+        }
+        return lo
       }
     }
-    const hubs = adj
-      .map((a, i) => [i, a.length] as const)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, small ? 3 : LABELS.length)
-      .map(([i]) => i)
-    const lens = edges.map(([a, b]) => pts[a].distanceTo(pts[b]))
-    const cum: number[] = []
-    lens.reduce((s, l, i) => (cum[i] = s + l), 0)
-    const totalLen = cum[cum.length - 1]
-    const pickEdge = () => {
-      const x = rand() * totalLen
-      let lo = 0
-      let hi = cum.length - 1
-      while (lo < hi) {
-        const m = (lo + hi) >> 1
-        if (cum[m] < x) lo = m + 1
-        else hi = m
-      }
-      return lo
-    }
+    const pickEdge = picker(edges.map((e, i) => elen[i] * (e.bus ? 2.5 : 1)))
+    const busIdx = edges.flatMap((e, i) => (e.bus ? [i] : []))
+    const pickBusAt = picker(busIdx.map((i) => elen[i]))
+    const pickBus = () => busIdx[pickBusAt()]
+    const pickNode = picker(nodes.map((n) => n.w))
+    const labelNodes = LABELS.slice(0, small ? 3 : LABELS.length).map((l) => nodes.findIndex((n) => n.label === l))
 
     const uniforms = {
       uProg: { value: 0 },
@@ -152,6 +176,7 @@ export default function Graph() {
       uPR: { value: renderer.getPixelRatio() },
       uScale: { value: 600 },
       uStrength: { value: 1 },
+      uGraphSize: { value: small ? 0.045 : 0.034 },
       uMouse: { value: new THREE.Vector2(999, 999) },
     }
     const material = new THREE.ShaderMaterial({
@@ -179,28 +204,28 @@ export default function Graph() {
       const halfH = camera.position.z * TAN
       const halfW = halfH * camera.aspect
       group.position.set(
-        home.x * (1 - e) + (mouse.active ? mouse.x * 0.12 : 0),
-        home.y * (1 - e) + (mouse.active ? mouse.y * 0.08 : 0),
+        home.x * (1 - e) + end.x * e + (mouse.active ? mouse.x * 0.12 : 0),
+        home.y * (1 - e) + end.y * e + (mouse.active ? mouse.y * 0.08 : 0),
         0,
       )
       if (mouse.active) uniforms.uMouse.value.set(mouse.x * halfW - group.position.x, mouse.y * halfH - group.position.y)
 
       const { clientWidth: w, clientHeight: h } = canvas
-      const ca = Math.cos(time * 0.07)
-      const sa = Math.sin(time * 0.07)
-      hubs.forEach((n, k) => {
+      const ca = Math.cos(Math.sin(time * 0.12) * 0.45)
+      const sa = Math.sin(Math.sin(time * 0.12) * 0.45)
+      labelNodes.forEach((n, k) => {
         const el = labelRefs.current[k]
         if (!el) return
         const show = smooth(prog, 0.7, 0.95)
         el.style.opacity = String(show)
         if (show <= 0) return
-        const p = pts[n]
+        const p = nodes[n].p
         world.set(p.x * ca + p.z * sa, p.y, -p.x * sa + p.z * ca).add(group.position).project(camera)
         const sx = (world.x * 0.5 + 0.5) * w
         const sy = (-world.y * 0.5 + 0.5) * h
         // keep labels off the closing sentence at the bottom left
         if (sy > h * 0.6 && (small || sx < w * 0.65)) el.style.opacity = '0'
-        el.style.transform = `translate(${sx + 12}px, ${sy - 10}px)`
+        el.style.transform = `translate(${sx + 20}px, ${sy - 12}px)`
       })
       renderer.render(scene, camera)
     }
@@ -235,26 +260,38 @@ export default function Graph() {
           const radial = Math.hypot((u - 0.5) / 0.5, (v - 0.46) / 0.56)
           if (dist < 0.15 || rand() < smooth(radial, 0.7, 1.02)) continue
           const l = 0.2126 * r + 0.7152 * gg + 0.0722 * b
-          A.push((u - 0.5) * PORTRAIT + (rand() - 0.5) * 0.01, (0.5 - v) * PORTRAIT + (rand() - 0.5) * 0.01, (l - 0.3) * 0.9)
+          const cell = PORTRAIT / N
+          A.push((u - 0.5) * PORTRAIT + (rand() - 0.5) * cell * 0.8, (0.5 - v) * PORTRAIT + (rand() - 0.5) * cell * 0.8, (l - 0.3) * 0.9)
           lum.push(l)
         }
       const M = lum.length
       const aEA = new Float32Array(M * 3)
       const aEB = new Float32Array(M * 3)
       const aP = new Float32Array(M * 4)
+      const jit = () => (rand() - 0.5) * 0.03
       for (let i = 0; i < M; i++) {
-        const ei = pickEdge()
-        const [a, b] = edges[ei]
-        const jx = (rand() - 0.5) * 0.03
-        const jy = (rand() - 0.5) * 0.03
-        const jz = (rand() - 0.5) * 0.03
-        aEA.set([pts[a].x + jx, pts[a].y + jy, pts[a].z + jz], i * 3)
-        aEB.set([pts[b].x + jx, pts[b].y + jy, pts[b].z + jz], i * 3)
         const v = 0.5 - A[i * 3 + 1] / PORTRAIT
         const seed = Math.min(Math.max(0.62 * v + 0.38 * rand(), 0), 0.999)
-        const accent = (seed * 7.13) % 1 > 0.9
-        const speed = ((accent ? 0.75 : 0.28) * (0.6 + rand() * 0.8)) / lens[ei]
-        aP.set([rand(), speed, seed, 0.045 + lum[i] * 0.025], i * 4)
+        const accent = (seed * 7.13) % 1 > 0.9 // orange particles = events travelling along the bus lines
+        let ea: THREE.Vector3
+        let eb: THREE.Vector3
+        let speed = 0
+        if (!accent && rand() < 0.04) {
+          // a few particles rest on the nodes so the services read as dots
+          const j = V(rand() - 0.5, rand() - 0.5, rand() - 0.5).multiplyScalar(0.2 * S)
+          ea = eb = nodes[pickNode()].p.clone().add(j)
+        } else {
+          const ei = accent ? pickBus() : pickEdge()
+          let { a: na, b: nb } = edges[ei]
+          if (accent && rand() < 0.5) [na, nb] = [nb, na]
+          const j = V(jit(), jit(), jit())
+          ea = nodes[na].p.clone().add(j)
+          eb = nodes[nb].p.clone().add(j)
+          speed = ((accent ? 0.75 : 0.28) * (0.6 + rand() * 0.8)) / elen[ei]
+        }
+        aEA.set(ea.toArray(), i * 3)
+        aEB.set(eb.toArray(), i * 3)
+        aP.set([rand(), speed, seed, (PORTRAIT / N) * (0.75 + Math.pow(lum[i], 0.9) * 1.25)], i * 4)
       }
       geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(M * 3), 3))
       geo.setAttribute('aA', new THREE.BufferAttribute(new Float32Array(A), 3))
