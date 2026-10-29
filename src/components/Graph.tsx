@@ -21,7 +21,7 @@ const smooth = (x: number, a: number, b: number) => {
 
 // Every particle has two homes: a pixel of the portrait (aA) and a point inside the GitHub mark (aB).
 const VERT = /* glsl */ `
-  uniform float uProg, uTime, uPR, uScale, uStrength, uLogoSize;
+  uniform float uProg, uTime, uPR, uScale, uStrength, uLogoSize, uRound;
   uniform vec2 uMouse;
   attribute vec3 aA;
   attribute vec3 aB;
@@ -48,7 +48,8 @@ const VERT = /* glsl */ `
 
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
-    gl_PointSize = max(mix(aP.y, uLogoSize, e) * uScale * uPR / -mv.z, 1.4);
+    float px = mix(aP.y, uLogoSize, e) * uScale * uPR / -mv.z;
+    gl_PointSize = uRound > 0.5 ? max(px, 1.4) : ceil(px) + 1.0; // square pixels: whole device pixels, overlapping by one, so no seams
     vCol = aCol;
     vNoise = fract(seed * 91.7);
     vAcc = step(0.93, fract(seed * 7.13));
@@ -57,12 +58,13 @@ const VERT = /* glsl */ `
 `
 
 const FRAG = /* glsl */ `
+  uniform float uRound;
   varying vec3 vCol;
   varying float vAcc, vMix, vNoise;
   void main() {
     float d = length(gl_PointCoord - 0.5);
-    if (d > 0.5) discard;
-    float a = smoothstep(0.5, 0.36, d);
+    if (uRound > 0.5 && d > 0.5) discard;
+    float a = uRound > 0.5 ? smoothstep(0.5, 0.36, d) : 1.0;
     vec3 skin = (vCol * 1.1 + 0.01) * (0.9 + 0.2 * vNoise);
     vec3 logo = vec3(0.953, 0.933, 0.894) * (0.8 + 0.2 * vNoise);
     vec3 accent = vec3(1.0, 0.42, 0.24);
@@ -79,9 +81,11 @@ export default function Graph() {
     const canvas = canvasRef.current!
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const small = window.innerWidth < 700
-    const N = small ? 210 : 360 // sampling grid of the portrait
+    const PIXEL = true // true: square pixels on a grid (pixel art); false: fine round dots over a soft photo
+    const N = PIXEL ? (small ? 110 : 170) : small ? 210 : 360 // sampling grid of the portrait
     const PORTRAIT = small ? 5.4 : 6.2
     const LOGO = small ? 3.9 : 5.2
+    const CELL = PORTRAIT / N
     const rand = rng(7)
     const base = import.meta.env.BASE_URL
 
@@ -89,11 +93,29 @@ export default function Graph() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100)
-    camera.position.z = small ? 13 : 9
     const group = new THREE.Group()
     scene.add(group)
-    const home = small ? { x: 0, y: 2.6 } : { x: 3.0, y: -0.1 }
-    const end = small ? { x: 0, y: 1.7 } : { x: 2.8, y: 0.5 }
+    // Side by side on wide screens (portrait on the right); stacked above the text on tall ones.
+    const home = { x: 0, y: 0 }
+    const end = { x: 0, y: 0 }
+    const layout = () => {
+      const aspect = camera.aspect
+      // always fit the portrait's width; on tall screens also keep it to about half of the height
+      camera.position.z = Math.max(9, (1.04 * PORTRAIT) / (2 * TAN * aspect), aspect < 1.1 ? PORTRAIT / TAN : 0)
+      const halfH = camera.position.z * TAN
+      const halfW = halfH * aspect
+      if (aspect < 1.1) {
+        home.x = 0
+        home.y = 0.8 * halfH - PORTRAIT / 2
+        end.x = 0
+        end.y = 0.75 * halfH - LOGO / 2
+      } else {
+        home.x = 0.45 * halfW
+        home.y = -0.1
+        end.x = 0.42 * halfW
+        end.y = 0.5
+      }
+    }
 
     const uniforms = {
       uProg: { value: 0 },
@@ -101,7 +123,8 @@ export default function Graph() {
       uPR: { value: renderer.getPixelRatio() },
       uScale: { value: 600 },
       uStrength: { value: 1 },
-      uLogoSize: { value: small ? 0.034 : 0.028 },
+      uLogoSize: { value: PIXEL ? CELL * 1.12 : small ? 0.034 : 0.028 },
+      uRound: { value: PIXEL ? 0 : 1 },
       uMouse: { value: new THREE.Vector2(999, 999) },
     }
     const material = new THREE.ShaderMaterial({
@@ -210,15 +233,17 @@ export default function Graph() {
           const isBackdrop = backdrop[y * N + x] === 1
           mask.data[i + 3] = isBackdrop ? 0 : 255 * fade
           if (isBackdrop || rand() < 1 - fade) continue
-          const cell = PORTRAIT / N
-          A.push((u - 0.5) * PORTRAIT + (rand() - 0.5) * cell * 0.5, (0.5 - v) * PORTRAIT + (rand() - 0.5) * cell * 0.5, 0)
+          const jx = PIXEL ? 0 : (rand() - 0.5) * CELL * 0.5
+          const jy = PIXEL ? 0 : (rand() - 0.5) * CELL * 0.5
+          const half = PIXEL ? 0.5 / N : 0 // pixels sit on cell centres
+          A.push((u + half - 0.5) * PORTRAIT + jx, (0.5 - v - half) * PORTRAIT + jy, 0)
           col.push(r, gg, b)
           lum.push(0.2126 * r + 0.7152 * gg + 0.0722 * b)
         }
       const M = lum.length
 
       // ---- the GitHub mark: every particle gets a random point inside its silhouette
-      const LS = 512
+      const LS = PIXEL ? Math.round(LOGO / CELL) : 512 // in pixel mode the mark uses the same cell size as the portrait
       const lc = document.createElement('canvas')
       lc.width = lc.height = LS
       const lg = lc.getContext('2d', { willReadFrequently: true })!
@@ -226,14 +251,22 @@ export default function Graph() {
       const ld = lg.getImageData(0, 0, LS, LS).data
       const filled: number[] = []
       for (let k = 0; k < LS * LS; k++) if (ld[k * 4 + 3] > 128) filled.push(k)
+      const order = filled.map((_, j) => j) // pixel mode: one particle per cell of the mark, shuffled
+      if (PIXEL)
+        for (let j = order.length - 1; j > 0; j--) {
+          const q = (rand() * (j + 1)) | 0
+          const tmp = order[j]
+          order[j] = order[q]
+          order[q] = tmp
+        }
 
       const aB = new Float32Array(M * 3)
       const aP = new Float32Array(M * 2)
       for (let i = 0; i < M; i++) {
         if (filled.length) {
-          const k = filled[(rand() * filled.length) | 0]
-          aB[i * 3] = ((k % LS) + rand()) / LS - 0.5
-          aB[i * 3 + 1] = 0.5 - (Math.floor(k / LS) + rand()) / LS
+          const k = filled[PIXEL ? order[i % filled.length] : (rand() * filled.length) | 0]
+          aB[i * 3] = ((k % LS) + (PIXEL ? 0.5 : rand())) / LS - 0.5
+          aB[i * 3 + 1] = 0.5 - (Math.floor(k / LS) + (PIXEL ? 0.5 : rand())) / LS
           aB[i * 3 + 2] = (rand() - 0.5) * 0.04
           aB[i * 3] *= LOGO
           aB[i * 3 + 1] *= LOGO
@@ -243,7 +276,7 @@ export default function Graph() {
         const v = 0.5 - A[i * 3 + 1] / PORTRAIT
         const seed = Math.min(Math.max(0.62 * v + 0.38 * rand(), 0), 0.999) // dissolves from the top down
         aP[i * 2] = seed
-        aP[i * 2 + 1] = (PORTRAIT / N) * (1.7 + lum[i] * 0.4)
+        aP[i * 2 + 1] = PIXEL ? CELL * 1.12 : CELL * (1.7 + lum[i] * 0.4)
       }
       geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(M * 3), 3))
       geo.setAttribute('aA', new THREE.BufferAttribute(new Float32Array(A), 3))
@@ -281,7 +314,7 @@ export default function Graph() {
       underGeo = new THREE.PlaneGeometry(PORTRAIT, PORTRAIT)
       const under = new THREE.Mesh(underGeo, underMat)
       under.position.z = -0.08
-      group.add(under)
+      if (!PIXEL) group.add(under) // the soft photo would blur the pixels
 
       points = new THREE.Points(geo, material)
       points.frustumCulled = false
@@ -308,6 +341,7 @@ export default function Graph() {
       const { clientWidth: w, clientHeight: h } = canvas
       renderer.setSize(w, h, false)
       camera.aspect = w / h
+      layout()
       camera.updateProjectionMatrix()
       uniforms.uScale.value = h / (2 * TAN)
       if (reduced && points) frame(0)

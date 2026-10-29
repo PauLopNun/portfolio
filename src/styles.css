@@ -238,6 +238,15 @@ footer { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wr
   .top nav { gap: 18px; font-size: 13px; }
   .scroll { display: none; }
 }
+@media (max-height: 520px) and (orientation: landscape) {
+  .hero { padding-top: 64px; padding-bottom: 5vh; }
+  .hero h1 { font-size: clamp(40px, 17vh, 96px); margin: 4px 0 10px; }
+  .lede { display: none; }
+  .kicker { margin-bottom: 6px; }
+  .hero-cta { margin-top: 12px; }
+  .hero-after p { font-size: clamp(28px, 13vh, 64px); }
+  .hero-after { bottom: 7vh; gap: 16px; }
+}
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
