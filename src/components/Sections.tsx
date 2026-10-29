@@ -259,7 +259,6 @@ function ExperienceCard({
   // progress of the NEXT card travelling up to its pinned spot (stays at 1 once pinned)
   const { scrollYProgress } = useScroll({ target: next ?? self, offset: ["start end", "start 220px"] })
   const scale = useTransform(scrollYProgress, [0, 1], [1, next ? 0.96 : 1])
-  const dim = useTransform(scrollYProgress, [0, 1], [0, next ? 0.1 : 0])
   const animate = m === "on" && wide && !!next
 
   return (
@@ -269,7 +268,6 @@ function ExperienceCard({
           style={animate ? { scale, transformOrigin: "50% 0%" } : undefined}
           className="sticker relative grid gap-6 rounded-3xl p-6 sm:p-8 md:grid-cols-[13rem_1fr]"
         >
-          {animate && <motion.div aria-hidden style={{ opacity: dim }} className="pointer-events-none absolute inset-0 rounded-[1.4rem] bg-ink" />}
           <div>
             <p className="mb-3 font-display text-5xl font-extrabold leading-none tracking-[0.06em] text-card [-webkit-text-stroke:4px_var(--ink)] [paint-order:stroke_fill]">
               0{i + 1}
