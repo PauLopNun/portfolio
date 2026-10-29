@@ -35,7 +35,7 @@ const VERT = /* glsl */ `
   void main() {
     float seed = aP.z;
     vec3 A = aA;
-    A.z += sin(uTime * 0.8 + seed * 40.0) * 0.03;
+    A.z += sin(uTime * 0.8 + seed * 40.0) * 0.015;
 
     float t = fract(aP.x + uTime * aP.y);
     vec3 B = mix(aEA, aEB, t);
@@ -71,7 +71,7 @@ const FRAG = /* glsl */ `
     float d = length(gl_PointCoord - 0.5);
     if (d > 0.5) discard;
     float a = smoothstep(0.5, 0.36, d);
-    vec3 skin = (vCol * 1.3 + 0.02) * (0.9 + 0.2 * vNoise);
+    vec3 skin = (vCol * 1.1 + 0.01) * (0.9 + 0.2 * vNoise);
     vec3 graph = vec3(0.953, 0.933, 0.894) * 0.55;
     vec3 accent = vec3(1.0, 0.42, 0.24);
     vec3 col = mix(skin, graph, vMix);
@@ -271,10 +271,11 @@ export default function Graph() {
           const b = px[i + 2] / 255
           const u = x / N
           const v = y / N
+          const yb = Math.min(y, Math.floor(N * 0.45)) // backdrop is read from the upper rows, below them the border is the shirt
           const dist = Math.hypot(
-            r - (at(2, y, 0) * (1 - u) + at(N - 3, y, 0) * u),
-            gg - (at(2, y, 1) * (1 - u) + at(N - 3, y, 1) * u),
-            b - (at(2, y, 2) * (1 - u) + at(N - 3, y, 2) * u),
+            r - (at(2, yb, 0) * (1 - u) + at(N - 3, yb, 0) * u),
+            gg - (at(2, yb, 1) * (1 - u) + at(N - 3, yb, 1) * u),
+            b - (at(2, yb, 2) * (1 - u) + at(N - 3, yb, 2) * u),
           )
           const radial = Math.hypot((u - 0.5) / 0.5, (v - 0.46) / 0.56)
           const fade = 1 - smooth(radial, 0.7, 1.02)
@@ -282,7 +283,7 @@ export default function Graph() {
           if (dist < 0.15 || rand() < 1 - fade) continue
           const l = 0.2126 * r + 0.7152 * gg + 0.0722 * b
           const cell = PORTRAIT / N
-          A.push((u - 0.5) * PORTRAIT + (rand() - 0.5) * cell * 0.5, (0.5 - v) * PORTRAIT + (rand() - 0.5) * cell * 0.5, (l - 0.3) * 0.9)
+          A.push((u - 0.5) * PORTRAIT + (rand() - 0.5) * cell * 0.5, (0.5 - v) * PORTRAIT + (rand() - 0.5) * cell * 0.5, 0)
           lum.push(l)
           col.push(r, gg, b)
         }
@@ -322,7 +323,7 @@ export default function Graph() {
       geo.setAttribute('aP', new THREE.BufferAttribute(aP, 4))
       geo.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(col), 3))
       // the photo itself, cut out and sitting just behind the particles: it fills the gaps between dots
-      const T = 512
+      const T = 720
       const pc = document.createElement('canvas')
       pc.width = pc.height = T
       const pg = pc.getContext('2d')!
@@ -342,7 +343,7 @@ export default function Graph() {
           void main() {
             vec4 t = texture2D(uMap, vUv);
             float hole = smoothstep(0.0, 0.95, length(vP - uMouse));
-            float a = t.a * (1.0 - smoothstep(0.0, 0.22, uProg)) * 0.8 * mix(1.0, hole, uStrength);
+            float a = t.a * (1.0 - smoothstep(0.0, 0.22, uProg)) * 0.9 * mix(1.0, hole, uStrength);
             gl_FragColor = vec4(pow(t.rgb, vec3(1.0 / 2.2)), a);
           }`,
         transparent: true,
@@ -358,7 +359,7 @@ export default function Graph() {
       group.add(points)
       if (reduced) frame(0)
     }
-    img.src = `${import.meta.env.BASE_URL}images/portrait-dark.webp`
+    img.src = `${import.meta.env.BASE_URL}images/portrait.webp`
 
     // ---- viewport + pointer
     const resize = () => {
