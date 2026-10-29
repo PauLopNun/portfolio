@@ -499,12 +499,15 @@ export function Stack() {
             <MarqueeRow key={g.area} area={g.area} tools={g.tools} reverse={i % 2 === 1} />
           ))}
         </div>
-        <Reveal className="mt-20 sm:mt-28">
-          <div className="relative mx-auto max-w-3xl overflow-hidden rounded-3xl border-2 border-line bg-[#17182c] px-6 py-10 text-center text-[#f3eee4] shadow-[6px_6px_0_0_var(--accent)] sm:px-12 sm:py-12">
-            <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-sun">How I work</h3>
-            <ul className="mt-6 flex flex-wrap justify-center gap-3">
+        <Reveal className="mt-16 sm:mt-24">
+          <div className="relative overflow-hidden rounded-3xl border-2 border-line bg-[#17182c] px-6 py-12 text-center text-[#f3eee4] shadow-[6px_6px_0_0_var(--accent)] sm:px-12 sm:py-16">
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-accent" />
+            <h3 className="font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
+              How I work<span className="text-sun">.</span>
+            </h3>
+            <ul className="mx-auto mt-8 flex max-w-4xl flex-wrap justify-center gap-3 sm:gap-4">
               {practices.map((p) => (
-                <li key={p} className="rounded-full border-2 border-[#f3eee4]/40 px-4 py-1.5 font-display text-lg font-bold">
+                <li key={p} className="rounded-full border-2 border-[#f3eee4]/40 px-5 py-2 font-display text-lg font-bold transition-colors hover:border-sun hover:text-sun sm:text-xl">
                   {p}
                 </li>
               ))}
