@@ -3,6 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import Cursor from './components/Cursor'
+import { heroState } from './heroState'
 import { profile, jobs, education, featured, moreProjects, stack, practices, certificates } from './data'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -14,6 +15,8 @@ const icon = (n: string) => `${base}icons/${n}.svg`
 
 const STATEMENT =
   'I build backends that talk through events. Enterprise Java, Spring Boot, Angular and Oracle PL/SQL by day, hexagonal architecture, DDD and RabbitMQ in the services I design, and AWS in the evenings.'
+
+const FIRST_SENTENCE = STATEMENT.split('. ')[0] + '.'
 
 function Clock() {
   const [t, setT] = useState('')
@@ -102,6 +105,23 @@ export default function App() {
       gsap.from('.hero-char', { yPercent: 110, duration: 1.1, ease: 'power4.out', stagger: 0.025, delay: 0.15 })
       gsap.from('.hero-rise', { y: 24, duration: 0.8, ease: 'power3.out', delay: 0.35 })
       gsap.from('.hero-fade', { opacity: 0, y: 24, duration: 0.8, ease: 'power3.out', stagger: 0.1, delay: 0.35 })
+
+      // the hero stays pinned while the portrait dissolves into the service graph
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: '.hero',
+            start: 'top top',
+            end: '+=130%',
+            pin: true,
+            scrub: true,
+            onUpdate: (self) => {
+              heroState.progress = self.progress
+            },
+          },
+        })
+        .to('.hero-inner', { opacity: 0, y: -50, ease: 'none', duration: 0.35 }, 0)
+        .fromTo('.hero-after', { opacity: 0, y: 40 }, { opacity: 1, y: 0, ease: 'none', duration: 0.28 }, 0.72)
 
       gsap.utils.toArray<HTMLElement>('.word').forEach((w) => {
         gsap.fromTo(
@@ -215,7 +235,8 @@ export default function App() {
               <Magnetic><a className="btn ghost" href={`mailto:${profile.email}`}>Say hello</a></Magnetic>
             </div>
           </div>
-          <div className="scroll mono hero-fade">Scroll</div>
+          <div className="scroll mono"><span className="hero-fade">Scroll</span></div>
+          <p className="hero-after" aria-hidden="true">{FIRST_SENTENCE}</p>
         </section>
 
         <section className="statement" id="about">
