@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, master]
   workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * *' # daily: picks up new GitHub social previews
 
 permissions:
   contents: read
@@ -24,6 +26,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Refresh project covers from GitHub
+        run: npm run previews
       - run: npm run build
         env:
           BASE_PATH: /portfolio-v2/

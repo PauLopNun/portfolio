@@ -229,10 +229,13 @@ export function About() {
 
 /* Experience */
 
+// the pinned stack needs room: wide and tall enough for three cards with their tabs
+const STACK_QUERY = "(min-width: 768px) and (min-height: 720px)"
+
 function useWide() {
-  const [wide, setWide] = useState(() => window.matchMedia("(min-width: 768px)").matches)
+  const [wide, setWide] = useState(() => window.matchMedia(STACK_QUERY).matches)
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)")
+    const mq = window.matchMedia(STACK_QUERY)
     const on = () => setWide(mq.matches)
     mq.addEventListener("change", on)
     return () => mq.removeEventListener("change", on)
@@ -254,13 +257,13 @@ function ExperienceCard({
   const { motion: m } = useMotionPref()
   const wide = useWide()
   // progress of the NEXT card travelling up to its pinned spot (stays at 1 once pinned)
-  const { scrollYProgress } = useScroll({ target: next ?? self, offset: ["start end", "start 150px"] })
-  const scale = useTransform(scrollYProgress, [0, 1], [1, next ? 0.94 : 1])
-  const dim = useTransform(scrollYProgress, [0, 1], [0, next ? 0.16 : 0])
+  const { scrollYProgress } = useScroll({ target: next ?? self, offset: ["start end", "start 220px"] })
+  const scale = useTransform(scrollYProgress, [0, 1], [1, next ? 0.96 : 1])
+  const dim = useTransform(scrollYProgress, [0, 1], [0, next ? 0.1 : 0])
   const animate = m === "on" && wide && !!next
 
   return (
-    <li ref={self} className="md:sticky" style={{ top: `calc(6.5rem + ${i * 1.5}rem)` }}>
+    <li ref={self} className="exp-card" style={{ top: `calc(6.5rem + ${i * 4.5}rem)` }}>
       <Reveal>
         <motion.article
           style={animate ? { scale, transformOrigin: "50% 0%" } : undefined}
@@ -300,7 +303,6 @@ export function Experience() {
   const refs = useMemo(() => jobs.map(() => createRef<HTMLLIElement>()), [])
   return (
     <section id="experience" className={`${shell} bg-bg-2/60`}>
-      <div aria-hidden className="dots pointer-events-none absolute right-10 top-24 hidden h-40 w-72 rounded-2xl opacity-20 lg:block" />
       <div className={inner}>
         <SectionHead num="02" kicker="Experience" title="Where I've shipped" />
         {/* Cards pin under the header and stack on top of each other while scrolling */}
@@ -321,12 +323,7 @@ export function Experience() {
 
 /* Projects */
 
-// GitHub social preview of each repository (saved in /public/images)
-const covers: Record<string, string> = {
-  "transport-service": "/images/project-transport-service.png",
-  FlowBoard: "/images/project-flowboard.png",
-  "telecom-notification-service": "/images/project-telecom.png",
-}
+// Cover = the GitHub social preview of the repo, refreshed at build time by scripts/fetch-previews.mjs
 
 function Tilt({ href, label, children }: { href: string; label: string; children: ReactNode }) {
   const rx = useSpring(0, { stiffness: 200, damping: 18 })
@@ -363,7 +360,7 @@ function Cover({ repo }: { repo: string }) {
   return (
     <div className="group relative aspect-[2/1] overflow-hidden rounded-3xl border-2 border-line bg-white shadow-[6px_6px_0_0_var(--shadow)]">
       <img
-        src={asset(covers[repo])}
+        src={asset(`/images/project-${repo.toLowerCase()}.png`)}
         alt=""
         width={1280}
         height={640}

@@ -263,3 +263,10 @@ html[data-motion="off"] *::after {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+/* experience cards pin under the header only when the viewport can hold the stack */
+@media (min-width: 768px) and (min-height: 720px) {
+  .exp-card {
+    position: sticky;
+  }
+}
