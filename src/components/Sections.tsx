@@ -242,7 +242,7 @@ export function Experience() {
               <Reveal>
                 <article className="sticker grid gap-6 rounded-3xl p-6 sm:p-8 md:grid-cols-[13rem_1fr]">
                   <div>
-                    <p className="mb-3 font-display text-5xl font-extrabold leading-none text-transparent [-webkit-text-stroke:2px_var(--ink)]">
+                    <p className="mb-3 font-display text-5xl font-extrabold leading-none tracking-[0.06em] text-card [-webkit-text-stroke:4px_var(--ink)] [paint-order:stroke_fill]">
                       0{i + 1}
                     </p>
                     <p className="font-mono text-sm font-semibold text-accent-ink">{job.period}</p>
@@ -320,17 +320,23 @@ function Tilt({ href, label, children }: { href: string; label: string; children
 
 function Cover({ repo, index }: { repo: string; index: number }) {
   const c = covers[repo]
-  const tilt = [-8, 6, -4]
+  const tilt = [-8, 5, -4]
   return (
-    <div className={`relative aspect-[16/11] overflow-hidden rounded-3xl border-2 border-line shadow-[6px_6px_0_0_var(--shadow)] ${c.tone}`}>
+    <div className={`group relative aspect-[16/11] overflow-hidden rounded-3xl border-2 border-line shadow-[6px_6px_0_0_var(--shadow)] ${c.tone}`}>
       <div aria-hidden className="hatch absolute inset-0 opacity-20 [--line:#17182c]" />
       <span
         aria-hidden
-        className="absolute -bottom-10 -right-2 font-display text-[11rem] font-extrabold leading-none tracking-tighter text-transparent [-webkit-text-stroke:3px_#17182c] sm:text-[14rem]"
+        className="absolute left-4 top-4 rounded-full border-2 border-[#17182c] bg-white px-3 py-1 font-mono text-xs font-bold text-[#17182c] sm:left-5 sm:top-5"
       >
-        0{index + 1}
+        Project 0{index + 1}
       </span>
-      <div className="absolute inset-0 flex items-center justify-center gap-4 sm:gap-6" style={{ transform: "translateZ(40px)" }}>
+      <span
+        aria-hidden
+        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#17182c] bg-white text-[#17182c] transition-transform duration-300 group-hover:-translate-y-1 group-hover:translate-x-1 sm:right-5 sm:top-5"
+      >
+        <ArrowUpRight className="h-4 w-4" />
+      </span>
+      <div className="absolute inset-0 flex items-center justify-center gap-4 sm:gap-7" style={{ transform: "translateZ(40px)" }}>
         {c.icons.map((ic, k) => (
           <motion.span
             key={ic}
@@ -339,9 +345,9 @@ function Cover({ repo, index }: { repo: string; index: number }) {
             whileHover={{ rotate: 0, scale: 1.12, y: -6 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15 + k * 0.1, type: "spring", stiffness: 220, damping: 14 }}
-            className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-[#17182c] bg-white p-3 shadow-[4px_4px_0_0_#17182c] sm:h-20 sm:w-20"
+            className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border-2 border-[#17182c] bg-white p-3.5 shadow-[4px_4px_0_0_#17182c] sm:h-24 sm:w-24 sm:p-4"
           >
-            <img src={asset(`/icons/${ic}.svg`)} alt="" width={48} height={48} className="h-full w-full object-contain" />
+            <img src={asset(`/icons/${ic}.svg`)} alt="" width={56} height={56} className="h-full w-full object-contain" />
           </motion.span>
         ))}
       </div>
