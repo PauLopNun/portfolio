@@ -321,10 +321,11 @@ export function Experience() {
 
 /* Projects */
 
-const covers: Record<string, { tone: string; icons: string[] }> = {
-  "transport-service": { tone: "bg-accent", icons: ["java", "spring", "rabbitmq"] },
-  FlowBoard: { tone: "bg-mint", icons: ["kotlin", "ktor", "jetpackcompose"] },
-  "telecom-notification-service": { tone: "bg-sun", icons: ["python", "fastapi", "docker"] },
+// GitHub social preview of each repository (saved in /public/images)
+const covers: Record<string, string> = {
+  "transport-service": "/images/project-transport-service.png",
+  FlowBoard: "/images/project-flowboard.png",
+  "telecom-notification-service": "/images/project-telecom.png",
 }
 
 function Tilt({ href, label, children }: { href: string; label: string; children: ReactNode }) {
@@ -358,39 +359,17 @@ function Tilt({ href, label, children }: { href: string; label: string; children
   )
 }
 
-function Cover({ repo, index }: { repo: string; index: number }) {
-  const c = covers[repo]
-  const tilt = [-8, 5, -4]
+function Cover({ repo }: { repo: string }) {
   return (
-    <div className={`group relative aspect-[16/11] overflow-hidden rounded-3xl border-2 border-line shadow-[6px_6px_0_0_var(--shadow)] ${c.tone}`}>
-      <div aria-hidden className="hatch absolute inset-0 opacity-20 [--line:#17182c]" />
-      <span
-        aria-hidden
-        className="absolute left-4 top-4 rounded-full border-2 border-[#17182c] bg-white px-3 py-1 font-mono text-xs font-bold text-[#17182c] sm:left-5 sm:top-5"
-      >
-        Project 0{index + 1}
-      </span>
-      <span
-        aria-hidden
-        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#17182c] bg-white text-[#17182c] transition-transform duration-300 group-hover:-translate-y-1 group-hover:translate-x-1 sm:right-5 sm:top-5"
-      >
-        <ArrowUpRight className="h-4 w-4" />
-      </span>
-      <div className="absolute inset-0 flex items-center justify-center gap-4 sm:gap-7" style={{ transform: "translateZ(40px)" }}>
-        {c.icons.map((ic, k) => (
-          <motion.span
-            key={ic}
-            initial={{ y: 40, opacity: 0, rotate: 0 }}
-            whileInView={{ y: 0, opacity: 1, rotate: tilt[k] }}
-            whileHover={{ rotate: 0, scale: 1.12, y: -6 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15 + k * 0.1, type: "spring", stiffness: 220, damping: 14 }}
-            className="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border-2 border-[#17182c] bg-white p-3.5 shadow-[4px_4px_0_0_#17182c] sm:h-24 sm:w-24 sm:p-4"
-          >
-            <img src={asset(`/icons/${ic}.svg`)} alt="" width={56} height={56} className="h-full w-full object-contain" />
-          </motion.span>
-        ))}
-      </div>
+    <div className="group relative aspect-[2/1] overflow-hidden rounded-3xl border-2 border-line bg-white shadow-[6px_6px_0_0_var(--shadow)]">
+      <img
+        src={asset(covers[repo])}
+        alt=""
+        width={1280}
+        height={640}
+        loading="lazy"
+        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+      />
     </div>
   )
 }
@@ -405,7 +384,7 @@ export function Projects() {
             <article key={p.name} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
               <Reveal className={i % 2 ? "lg:order-2" : ""}>
                 <Tilt href={p.links[0].href} label={`${p.name} on GitHub`}>
-                  <Cover repo={p.repo} index={i} />
+                  <Cover repo={p.repo} />
                 </Tilt>
               </Reveal>
               <Reveal delay={0.1}>

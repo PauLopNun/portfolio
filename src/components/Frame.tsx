@@ -103,12 +103,11 @@ export function Frame() {
 
   return (
     <>
-      {/* Page frame */}
-      <div aria-hidden className="pointer-events-none fixed inset-2 z-40 rounded-[22px] border-2 border-line sm:inset-3" />
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-[42] h-2 bg-bg sm:h-3" />
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 z-[42] h-2 bg-bg sm:h-3" />
-      <div aria-hidden className="pointer-events-none fixed inset-y-0 left-0 z-[42] w-2 bg-bg sm:w-3" />
-      <div aria-hidden className="pointer-events-none fixed inset-y-0 right-0 z-[42] w-2 bg-bg sm:w-3" />
+      {/* Page frame: the huge shadow paints everything outside the rounded border in the page colour, corners included */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-2 z-[42] rounded-[22px] border-2 border-line shadow-[0_0_0_100vmax_var(--bg)] sm:inset-3"
+      />
 
       {/* Side rails */}
       <p className="pointer-events-none fixed bottom-10 left-6 z-40 hidden origin-bottom-left -rotate-90 translate-x-4 font-mono text-[0.68rem] uppercase tracking-[0.25em] text-dim lg:block">
