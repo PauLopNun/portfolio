@@ -82,15 +82,15 @@ const cssColor = (name: string, fallback: string) => {
   return new THREE.Vector3(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255)
 }
 
-export default function Graph({ dark }: { dark: boolean }) {
+export default function Graph({ dark, still }: { dark: boolean; still: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current!
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduced = still || window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const small = window.innerWidth < 700
-    const PIXEL = true // true: square pixels on a grid (pixel art); false: fine round dots over a soft photo
-    const N = PIXEL ? (small ? 110 : 170) : small ? 210 : 360 // sampling grid of the portrait
+    const PIXEL = false // true: square pixels on a grid (pixel art); false: fine round dots over a soft photo
+    const N = PIXEL ? (small ? 110 : 170) : small ? 320 : 560 // sampling grid of the portrait
     const PORTRAIT = small ? 5.4 : 6.2
     const LOGO = small ? 3.9 : 5.2
     const CELL = PORTRAIT / N
@@ -98,7 +98,7 @@ export default function Graph({ dark }: { dark: boolean }) {
     const base = import.meta.env.BASE_URL
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'low-power' })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3))
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100)
     const group = new THREE.Group()
@@ -109,12 +109,12 @@ export default function Graph({ dark }: { dark: boolean }) {
     const layout = () => {
       const aspect = camera.aspect
       // always fit the portrait's width; on tall screens also keep it to about half of the height
-      camera.position.z = Math.max(9, (1.04 * PORTRAIT) / (2 * TAN * aspect), aspect < 1.1 ? PORTRAIT / TAN : 0)
+      camera.position.z = Math.max(9, (1.04 * PORTRAIT) / (2 * TAN * aspect), aspect < 1.1 ? PORTRAIT / (0.72 * TAN) : 0)
       const halfH = camera.position.z * TAN
       const halfW = halfH * aspect
       if (aspect < 1.1) {
         home.x = 0
-        home.y = 0.8 * halfH - PORTRAIT / 2 + 0.6
+        home.y = 0.86 * halfH - PORTRAIT / 2
         end.x = 0
         end.y = 0.75 * halfH - LOGO / 2
       } else {
@@ -131,9 +131,9 @@ export default function Graph({ dark }: { dark: boolean }) {
       uPR: { value: renderer.getPixelRatio() },
       uScale: { value: 600 },
       uStrength: { value: 1 },
-      uLogoSize: { value: PIXEL ? CELL * 1.12 : small ? 0.034 : 0.028 },
+      uLogoSize: { value: PIXEL ? CELL * 1.12 : small ? 0.026 : 0.02 },
       uRound: { value: PIXEL ? 0 : 1 },
-      uLogo: { value: cssColor('--logo', '#f3eee4') },
+      uLogo: { value: cssColor('--ink', '#f3eee4') },
       uAccent: { value: cssColor('--accent', '#ff6b3d') },
       uMouse: { value: new THREE.Vector2(999, 999) },
     }
@@ -149,6 +149,9 @@ export default function Graph({ dark }: { dark: boolean }) {
     let underTex: THREE.CanvasTexture | null = null
     let underMat: THREE.ShaderMaterial | null = null
     let underGeo: THREE.PlaneGeometry | null = null
+    let logoTex: THREE.CanvasTexture | null = null
+    let logoMat: THREE.ShaderMaterial | null = null
+    let logoGeo: THREE.PlaneGeometry | null = null
 
     // ---- frame
     let prog = 0
@@ -295,7 +298,7 @@ export default function Graph({ dark }: { dark: boolean }) {
       geo.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(col), 4))
 
       // the photo itself, cut out and sitting just behind the particles: it fills the gaps between dots
-      const T = 720
+      const T = 864 // the photo at its native resolution
       const pc = document.createElement('canvas')
       pc.width = pc.height = T
       const pg = pc.getContext('2d')!
@@ -308,6 +311,7 @@ export default function Graph({ dark }: { dark: boolean }) {
       pg.drawImage(mc, 0, 0, T, T)
       underTex = new THREE.CanvasTexture(pc)
       underTex.colorSpace = THREE.SRGBColorSpace
+      underTex.anisotropy = renderer.capabilities.getMaxAnisotropy()
       underMat = new THREE.ShaderMaterial({
         uniforms: { uMap: { value: underTex }, uProg: uniforms.uProg, uMouse: uniforms.uMouse, uStrength: uniforms.uStrength },
         vertexShader: `varying vec2 vUv; varying vec2 vP; void main() { vUv = uv; vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
@@ -325,6 +329,39 @@ export default function Graph({ dark }: { dark: boolean }) {
       const under = new THREE.Mesh(underGeo, underMat)
       under.position.z = -0.08
       if (!PIXEL) group.add(under) // the soft photo would blur the pixels
+
+      // the GitHub mark itself, as a crisp vector render: it takes over from the particles as they settle
+      if (!PIXEL) {
+        const LT = 1024
+        const lcv = document.createElement('canvas')
+        lcv.width = lcv.height = LT
+        const lcx = lcv.getContext('2d')!
+        lcx.drawImage(logo, 0, 0, LT, LT)
+        lcx.globalCompositeOperation = 'source-in'
+        const ink = cssColor('--ink', '#17182c')
+        lcx.fillStyle = `rgb(${Math.round(ink.x * 255)},${Math.round(ink.y * 255)},${Math.round(ink.z * 255)})`
+        lcx.fillRect(0, 0, LT, LT)
+        logoTex = new THREE.CanvasTexture(lcv)
+        logoTex.colorSpace = THREE.SRGBColorSpace
+        logoTex.anisotropy = renderer.capabilities.getMaxAnisotropy()
+        logoMat = new THREE.ShaderMaterial({
+          uniforms: { uMap: { value: logoTex }, uProg: uniforms.uProg, uMouse: uniforms.uMouse, uStrength: uniforms.uStrength },
+          vertexShader: `varying vec2 vUv; varying vec2 vP; void main() { vUv = uv; vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+          fragmentShader: `uniform sampler2D uMap; uniform float uProg, uStrength; uniform vec2 uMouse; varying vec2 vUv; varying vec2 vP;
+            void main() {
+              vec4 t = texture2D(uMap, vUv);
+              float hole = smoothstep(0.0, 0.95, length(vP - uMouse));
+              float a = t.a * smoothstep(0.82, 1.0, uProg) * 0.94 * mix(1.0, hole, uStrength);
+              gl_FragColor = vec4(pow(t.rgb, vec3(1.0 / 2.2)), a);
+            }`,
+          transparent: true,
+          depthWrite: false,
+        })
+        logoGeo = new THREE.PlaneGeometry(LOGO, LOGO)
+        const logoMesh = new THREE.Mesh(logoGeo, logoMat)
+        logoMesh.position.z = -0.05
+        group.add(logoMesh)
+      }
 
       points = new THREE.Points(geo, material)
       points.frustumCulled = false
@@ -395,13 +432,16 @@ export default function Graph({ dark }: { dark: boolean }) {
       underTex?.dispose()
       underMat?.dispose()
       underGeo?.dispose()
+      logoTex?.dispose()
+      logoMat?.dispose()
+      logoGeo?.dispose()
       renderer.dispose()
     }
-  }, [dark])
+  }, [dark, still])
 
   return (
-    <div className="graph" role="img" aria-label="Portrait of Pau López Núñez that dissolves and rebuilds itself as the GitHub logo">
-      <canvas ref={canvasRef} />
+    <div className="absolute inset-0" role="img" aria-label="Portrait of Pau López Núñez that dissolves and rebuilds itself as the GitHub logo">
+      <canvas ref={canvasRef} className="block h-full w-full" />
     </div>
   )
 }

@@ -1,13 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pau López Núñez — Backend developer</title>
+    <title>Pau López Núñez | Backend Developer</title>
     <meta name="description" content="Pau López Núñez, backend developer in Valencia. Java, Spring Boot, event-driven services and AWS." />
-    <meta name="theme-color" content="#f3eee4" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3eee4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#11121f" />
     <meta name="color-scheme" content="light dark" />
-    <script>try{if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}</script>
+    <!-- Runs before paint so the page never flashes the wrong theme or motion setting. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme')
+          var dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.classList.toggle('dark', dark)
+          var m = localStorage.getItem('motion')
+          if (!m) m = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'on'
+          document.documentElement.dataset.motion = m
+        } catch (e) {}
+      })()
+    </script>
     <link rel="preload" as="font" type="font/woff2" crossorigin href="%BASE_URL%fonts/bricolage-latin.woff2" />
     <link rel="preload" as="font" type="font/woff2" crossorigin href="%BASE_URL%fonts/inter-latin.woff2" />
     <link rel="preload" as="font" type="font/woff2" crossorigin href="%BASE_URL%fonts/jetbrains-mono-latin.woff2" />
@@ -15,8 +28,8 @@
     <link rel="canonical" href="https://paulopnun.github.io/portfolio-v2/" />
 
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Pau López Núñez — Backend developer" />
-    <meta property="og:description" content="Event-driven services in Java and Spring Boot, enterprise Oracle and Angular at work, and AWS on the way." />
+    <meta property="og:title" content="Pau López Núñez | Backend Developer" />
+    <meta property="og:description" content="Java and Spring Boot, event-driven microservices and AWS." />
     <meta property="og:url" content="https://paulopnun.github.io/portfolio-v2/" />
     <meta property="og:image" content="https://paulopnun.github.io/portfolio-v2/og.png" />
     <meta property="og:image:width" content="1200" />
