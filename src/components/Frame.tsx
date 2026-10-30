@@ -145,7 +145,7 @@ export function Frame() {
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
               aria-controls="site-menu"
-              className="group flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.25em] text-ink"
+              className="group -my-3 flex items-center gap-3 py-3 pr-4 font-mono text-xs font-bold uppercase tracking-[0.25em] text-ink"
             >
               <span className="flex w-6 flex-col gap-[5px]">
                 <span className={`h-[2px] bg-ink transition-transform ${open ? "translate-y-[3.5px] rotate-45" : ""}`} />

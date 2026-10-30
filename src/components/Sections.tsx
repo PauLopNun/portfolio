@@ -543,7 +543,7 @@ export function Contact() {
             I&apos;m open to backend roles and interesting projects. Drop me a line.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <a href={`mailto:${profile.email}`} className="btn btn-accent !px-6 !py-4 !text-base sm:!text-lg">
+            <a href={`mailto:${profile.email}`} className="btn btn-accent max-w-full !px-4 !py-4 !text-sm min-[360px]:!px-6 min-[360px]:!text-base sm:!text-lg">
               <Mail className="h-5 w-5" /> {profile.email}
             </a>
             <button type="button" onClick={copy} className="btn !py-4" aria-live="polite">

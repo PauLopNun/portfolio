@@ -21,7 +21,7 @@ const smooth = (x: number, a: number, b: number) => {
 
 // Every particle has two homes: a pixel of the portrait (aA) and a point inside the GitHub mark (aB).
 const VERT = /* glsl */ `
-  uniform float uProg, uTime, uPR, uScale, uStrength, uLogoSize, uRound;
+  uniform float uProg, uTime, uPR, uScale, uStrength, uLogoSize, uRound, uLogoScale;
   uniform vec2 uMouse;
   attribute vec3 aA;
   attribute vec3 aB;
@@ -34,7 +34,7 @@ const VERT = /* glsl */ `
     float seed = aP.x;
     vec3 A = aA;
     A.z += sin(uTime * 0.8 + seed * 40.0) * 0.015;
-    vec3 B = aB + 0.022 * vec3(sin(uTime * 0.9 + seed * 50.0), cos(uTime * 0.7 + seed * 70.0), sin(uTime * 0.8 + seed * 30.0));
+    vec3 B = vec3(aB.xy * uLogoScale, aB.z) + 0.022 * vec3(sin(uTime * 0.9 + seed * 50.0), cos(uTime * 0.7 + seed * 70.0), sin(uTime * 0.8 + seed * 30.0));
 
     float lt = clamp(uProg * 1.7 - seed * 0.7, 0.0, 1.0);
     float e = lt * lt * (3.0 - 2.0 * lt);
@@ -103,22 +103,36 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
     // Side by side on wide screens (portrait on the right); stacked above the text on tall ones.
     const home = { x: 0, y: 0 }
     const end = { x: 0, y: 0 }
+    let logoMesh: THREE.Mesh | null = null
     const layout = () => {
       const aspect = camera.aspect
-      // always fit the portrait's width; on tall screens also keep it to about half of the height
-      camera.position.z = Math.max(9, (1.04 * PORTRAIT) / (2 * TAN * aspect), aspect < 1.1 ? PORTRAIT / (0.72 * TAN) : 0)
-      const halfH = camera.position.z * TAN
-      const halfW = halfH * aspect
+      const h = canvas.clientHeight || 1
       if (aspect < 1.1) {
+        // Phones and tablets: the portrait takes exactly the room between the header and the hero text.
+        const block = canvas.closest('section')?.querySelector<HTMLElement>('[data-hero-block]')
+        const textTop = h - 56 - (block?.offsetHeight ?? 0.62 * h)
+        const room = Math.max(textTop - 76 - 8, 150)
+        const zWidth = (1.04 * PORTRAIT) / (2 * TAN * aspect)
+        const zRoom = (0.9 * PORTRAIT * h) / (2 * TAN * room)
+        const z = Math.max(9, zWidth, zRoom)
+        camera.position.z = z
+        const unit = h / (2 * TAN * z) // screen px per world unit at the portrait's depth
         home.x = 0
-        home.y = 0.86 * halfH - PORTRAIT / 2
+        home.y = (h / 2 - (76 + room / 2)) / unit
         end.x = 0
-        end.y = 0.17 * halfH
+        end.y = 0.17 * z * TAN
+        const zRef = PORTRAIT / (0.72 * TAN) // camera distance the logo size was designed for
+        uniforms.uLogoScale.value = z / zRef
+        logoMesh?.scale.setScalar(uniforms.uLogoScale.value)
       } else {
+        camera.position.z = Math.max(9, (1.04 * PORTRAIT) / (2 * TAN * aspect))
+        const halfW = camera.position.z * TAN * aspect
         home.x = 0.45 * halfW
         home.y = -0.1
         end.x = 0.42 * halfW
         end.y = 0 // logo centred in the viewport, level with the closing text
+        uniforms.uLogoScale.value = 1
+        logoMesh?.scale.setScalar(1)
       }
     }
 
@@ -129,6 +143,7 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
       uScale: { value: 600 },
       uStrength: { value: 1 },
       uLogoSize: { value: PIXEL ? CELL * 1.12 : small ? 0.026 : 0.02 },
+      uLogoScale: { value: 1 },
       uRound: { value: PIXEL ? 0 : 1 },
       uLogo: { value: cssColor('--ink', '#f3eee4') },
       uMouse: { value: new THREE.Vector2(999, 999) },
@@ -354,9 +369,10 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
           depthWrite: false,
         })
         logoGeo = new THREE.PlaneGeometry(LOGO, LOGO)
-        const logoMesh = new THREE.Mesh(logoGeo, logoMat)
+        logoMesh = new THREE.Mesh(logoGeo, logoMat)
         logoMesh.position.z = -0.05
         group.add(logoMesh)
+        layout()
       }
 
       points = new THREE.Points(geo, material)
@@ -390,6 +406,7 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
       if (reduced && points) frame(0)
     }
     resize()
+    document.fonts?.ready.then(resize) // the text block changes height when the fonts arrive
     const ro = new ResizeObserver(resize)
     ro.observe(canvas)
 

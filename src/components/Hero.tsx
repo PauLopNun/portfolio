@@ -45,7 +45,8 @@ export function Hero() {
   const wrap = useRef<HTMLElement>(null)
   const { motion: m } = useMotionPref()
   const { resolvedTheme } = useTheme()
-  const short = useMediaQuery('(max-height: 560px)') // phones held sideways: no pinned scroll, the hero just scrolls
+  const short = useMediaQuery('(max-height: 640px)') // phones held sideways or very small ones: no pinned scroll, the hero just scrolls
+  const tiny = useMediaQuery('(max-height: 640px) and (max-aspect-ratio: 1/1)') // small portrait phones: the portrait gets its own room above the text
   const pinned = m === 'on' && !short
 
   // While the hero is pinned, scroll progress (0 → 1) drives the portrait → GitHub mark morph.
@@ -72,10 +73,10 @@ export function Hero() {
 
         <motion.div
           style={pinned ? { opacity: textOpacity, y: textY } : undefined}
-          className={`relative z-10 flex items-end px-6 pb-14 pt-28 sm:px-12 lg:items-center lg:px-20 lg:pb-0 ${pinned ? 'h-full' : 'min-h-svh'}`}
+          className={`relative z-10 flex items-end px-6 pb-14 sm:px-12 landscape:items-center lg:px-20 landscape:pb-0 ${pinned ? 'h-full' : 'min-h-svh'} ${tiny ? 'pt-[330px]' : 'pt-28'}`}
         >
-          <div className="mx-auto grid w-full max-w-7xl items-center lg:grid-cols-[1.05fr_1fr]">
-            <div className="relative">
+          <div className="mx-auto grid w-full max-w-7xl items-center landscape:grid-cols-[1.05fr_1fr]">
+            <div className="relative" data-hero-block>
               <motion.p
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -89,7 +90,7 @@ export function Hero() {
                 Open to new opportunities
               </motion.p>
 
-              <h1 className="mt-6 font-display text-[clamp(2.9rem,7.4vw,7.75rem)] font-extrabold leading-[0.88] tracking-[-0.04em] text-ink">
+              <h1 className="mt-6 [@media(max-height:720px)]:mt-4 font-display text-[clamp(2.9rem,7.4vw,7.75rem)] [@media(max-height:720px)]:text-[2.5rem] font-extrabold leading-[0.88] tracking-[-0.04em] text-ink">
                 <Line text="Hi, I'm" delay={0.1} />
                 <span className="display-shadow block">
                   <span className="whitespace-nowrap">
@@ -99,15 +100,15 @@ export function Hero() {
               </h1>
 
               <motion.div initial={{ y: 20 }} animate={{ y: 0 }} transition={{ delay: 0.3, duration: 0.7, ease }}>
-                <p className="mt-8 max-w-lg text-lg leading-relaxed sm:text-xl">
+                <p className="mt-8 [@media(max-height:720px)]:mt-5 max-w-lg text-lg leading-relaxed [@media(max-height:720px)]:text-base sm:text-xl [@media(max-height:720px)]:sm:text-lg">
                   A{' '}
                   <span className="inline-block -rotate-1 rounded-md bg-sun px-1.5 font-semibold text-[#17182c]">backend developer</span>{' '}
                   who builds Java and Spring Boot services, wires them together with events and ships them to the cloud.
                 </p>
-                <p className="mt-4 flex items-center gap-2 font-mono text-sm text-dim">
+                <p className="mt-4 [@media(max-height:720px)]:mt-2 flex items-center gap-2 font-mono text-sm text-dim">
                   <MapPin className="h-4 w-4" aria-hidden /> València, Spain
                 </p>
-                <div className="mt-10 flex flex-wrap items-center gap-4">
+                <div className="mt-10 [@media(max-height:720px)]:mt-6 flex flex-wrap items-center gap-4">
                   <a href="#projects" className="btn btn-accent">
                     See my work <ArrowDown className="h-4 w-4" />
                   </a>
@@ -121,7 +122,7 @@ export function Hero() {
         </motion.div>
 
         {pinned && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-start px-6 pt-[60svh] sm:px-12 lg:items-center lg:px-20 lg:pt-0">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-start px-6 pt-[60svh] sm:px-12 landscape:items-center lg:px-20 landscape:pt-0">
             <motion.div style={{ opacity: afterOpacity, y: afterY, visibility: afterVisibility }} className="pointer-events-auto mx-auto w-full max-w-7xl">
               <p className="display-shadow max-w-[14ch] font-display text-[clamp(2.4rem,6vw,5.75rem)] font-extrabold leading-[0.95] tracking-[-0.04em] text-ink">
                 See the code on GitHub.
