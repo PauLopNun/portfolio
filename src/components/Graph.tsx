@@ -285,8 +285,8 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
           const b = px[i + 2] / 255
           const u = x / N
           const v = y / N
-          const radial = Math.hypot((u - 0.5) / 0.5, (v - 0.46) / 0.56)
-          const fade = 1 - smooth(radial, 0.7, 1.02)
+          const radial = Math.hypot((u - 0.5) / 0.5, (v - 0.42) / 0.5) // an ellipse that reaches zero before the bottom of the photo: round, not cut flat
+          const fade = 1 - smooth(radial, 0.66, 1.0)
           const isBackdrop = backdrop[y * N + x] === 1
           mask.data[i + 3] = isBackdrop ? 0 : 255 * fade
           if (isBackdrop || fade < 0.03) continue // the soft edge is an alpha fade, not random holes
