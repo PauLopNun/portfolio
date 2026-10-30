@@ -111,14 +111,14 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
         // Phones and tablets: the portrait takes exactly the room between the header and the hero text.
         const block = canvas.closest('section')?.querySelector<HTMLElement>('[data-hero-block]')
         const textTop = h - 56 - (block?.offsetHeight ?? 0.62 * h)
-        const room = Math.max(textTop - 76 - 8, 150)
+        const room = Math.max(textTop - 92 - 46, 150) // breathing space under the header and above the text
         const zWidth = (1.04 * PORTRAIT) / (2 * TAN * aspect)
-        const zRoom = (0.9 * PORTRAIT * h) / (2 * TAN * room)
+        const zRoom = (0.84 * PORTRAIT * h) / (2 * TAN * room)
         const z = Math.max(9, zWidth, zRoom)
         camera.position.z = z
         const unit = h / (2 * TAN * z) // screen px per world unit at the portrait's depth
         home.x = 0
-        home.y = (h / 2 - (76 + room / 2)) / unit
+        home.y = (h / 2 - (92 + room / 2)) / unit
         end.x = 0
         end.y = 0.17 * z * TAN
         const zRef = PORTRAIT / (0.72 * TAN) // camera distance the logo size was designed for

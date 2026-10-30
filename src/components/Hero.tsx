@@ -73,7 +73,7 @@ export function Hero() {
 
         <motion.div
           style={pinned ? { opacity: textOpacity, y: textY } : undefined}
-          className={`relative z-10 flex items-end px-6 pb-14 sm:px-12 landscape:items-center lg:px-20 landscape:pb-0 ${pinned ? 'h-full' : 'min-h-svh'} ${tiny ? 'pt-[330px]' : 'pt-28'}`}
+          className={`relative z-10 flex items-end px-6 pb-14 sm:px-12 landscape:items-center lg:px-20 landscape:pb-0 ${pinned ? 'h-full' : 'min-h-svh'} ${tiny ? 'pt-[360px]' : 'pt-28'}`}
         >
           <div className="mx-auto grid w-full max-w-7xl items-center landscape:grid-cols-[1.05fr_1fr]">
             <div className="relative" data-hero-block>
