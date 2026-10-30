@@ -98,7 +98,7 @@ export type Project = {
 export const featured: Project[] = [
   {
     name: "Transport Service",
-    repo: "transport-service",
+    repo: "supply-chain-simulator-workshop", // cover = preview of the whole system (more context than the single service)
     context: "My microservice in the GFT supply chain simulator, 2026.",
     summary:
       "Manages the trucks of a distributed supply chain: registers them, assigns them to shipment requests and moves them across the map one simulated day at a time. It only talks to the other four services through RabbitMQ events.",

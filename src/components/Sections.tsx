@@ -311,7 +311,7 @@ export function Projects() {
           {featured.map((p, i) => (
             <article key={p.name} className="grid items-stretch gap-10 lg:grid-cols-2 lg:gap-20">
               <Reveal className={`h-full ${i % 2 ? "lg:order-2" : ""}`}>
-                <a href={p.links[0].href} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on GitHub`} className="block h-full rounded-3xl">
+                <a href={`https://github.com/PauLopNun/${p.repo}`} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on GitHub`} className="block h-full rounded-3xl">
                   <Cover repo={p.repo} />
                 </a>
               </Reveal>
