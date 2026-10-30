@@ -123,10 +123,10 @@ export function Frame() {
 
   return (
     <>
-      {/* Page frame: the huge shadow paints everything outside the rounded border in the page colour, corners included */}
+      {/* Page frame: sized to the LARGE viewport (lvh) so it never opens or closes when a phone browser hides or shows its address bar. The huge shadow paints everything outside the rounded border in the page colour, corners included */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-2 z-[42] rounded-[22px] border-2 border-line shadow-[0_0_0_100vmax_var(--bg)] sm:inset-3"
+        className="pointer-events-none fixed inset-x-2 top-2 z-[42] h-[calc(100lvh-1rem)] rounded-[22px] border-2 border-line shadow-[0_0_0_100vmax_var(--bg)] sm:inset-x-3 sm:top-3 sm:h-[calc(100lvh-1.5rem)]"
       />
 
       {/* Side rails */}
