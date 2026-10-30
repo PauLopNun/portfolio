@@ -88,7 +88,12 @@ export function Frame() {
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30 })
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
+    // the header only gets its blurred backdrop once the pinned hero is over, so it never covers the portrait or the logo
+    const onScroll = () => {
+      const hero = document.getElementById("top")
+      const end = hero ? hero.offsetHeight - window.innerHeight : 40
+      setScrolled(window.scrollY > Math.max(40, end))
+    }
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)

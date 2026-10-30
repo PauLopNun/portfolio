@@ -58,8 +58,8 @@ export function Hero() {
     if (!pinned) heroState.progress = 0
   }, [pinned])
 
-  const textOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0])
-  const textY = useTransform(scrollYProgress, [0, 0.3], [0, -50])
+  const textOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0])
+  const textY = useTransform(scrollYProgress, [0, 0.1], [0, -40])
   const afterOpacity = useTransform(scrollYProgress, [0.7, 0.98], [0, 1])
   const afterY = useTransform(scrollYProgress, [0.7, 0.98], [40, 0])
   const afterVisibility = useTransform(scrollYProgress, (v) => (v > 0.7 ? 'visible' : 'hidden'))
