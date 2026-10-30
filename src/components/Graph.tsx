@@ -174,7 +174,9 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
       time += dt
       // the portrait stays whole for the first part of the scroll, then dissolves
       const target = Math.min(Math.max((heroState.progress - 0.12) / 0.88, 0), 1)
-      prog += (target - prog) * Math.min(1, dt * 6)
+      // a jump (Back to top, anchor links) must not play the whole morph backwards over the page: snap when far away
+      if (Math.abs(target - prog) > 0.35) prog = target
+      else prog += (target - prog) * Math.min(1, dt * 6)
       const e = smooth(prog, 0, 1)
       uniforms.uTime.value = time
       uniforms.uProg.value = prog
