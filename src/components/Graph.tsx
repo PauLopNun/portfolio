@@ -170,7 +170,9 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
     const mouse = { x: 999, y: 999, active: false }
     const frame = (dt: number) => {
       time += dt
-      prog += (heroState.progress - prog) * Math.min(1, dt * 6)
+      // the portrait stays whole for the first part of the scroll, then dissolves
+      const target = Math.min(Math.max((heroState.progress - 0.2) / 0.8, 0), 1)
+      prog += (target - prog) * Math.min(1, dt * 6)
       const e = smooth(prog, 0, 1)
       uniforms.uTime.value = time
       uniforms.uProg.value = prog

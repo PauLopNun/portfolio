@@ -58,14 +58,15 @@ export function Hero() {
     if (!pinned) heroState.progress = 0
   }, [pinned])
 
-  const textOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0])
-  const textY = useTransform(scrollYProgress, [0, 0.1], [0, -40])
+  const textOpacity = useTransform(scrollYProgress, [0.03, 0.12], [1, 0])
+  const portraitScreen = useMediaQuery('(orientation: portrait)') // text and portrait are stacked: the text must not travel up into the photo
+  const textY = useTransform(scrollYProgress, [0.03, 0.12], [0, portraitScreen ? 0 : -40])
   const afterOpacity = useTransform(scrollYProgress, [0.7, 0.98], [0, 1])
   const afterY = useTransform(scrollYProgress, [0.7, 0.98], [40, 0])
   const afterVisibility = useTransform(scrollYProgress, (v) => (v > 0.7 ? 'visible' : 'hidden'))
 
   return (
-    <section id="top" ref={wrap} className={pinned ? 'relative h-[230svh]' : 'relative'}>
+    <section id="top" ref={wrap} className={pinned ? 'relative h-[320svh]' : 'relative'}>
       <div className={pinned ? 'sticky top-0 h-svh overflow-hidden' : 'relative min-h-svh overflow-hidden'}>
         <Suspense fallback={null}>
           <Graph key={`${resolvedTheme}-${m}`} dark={resolvedTheme === 'dark'} still={m === 'off'} />
