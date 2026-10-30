@@ -352,14 +352,16 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
         // unsharp mask (3x3): crisper eyes, brows and hair strands without adding noise
         const src = pg.getImageData(0, 0, T, T)
         const out = pg.createImageData(T, T)
-        const a = src.data, o = out.data, k = 0.55
+        const a = src.data, o = out.data, k = 0.6
         for (let y = 0; y < T; y++)
           for (let x = 0; x < T; x++) {
             const i = (y * T + x) * 4
             const xl = x > 0 ? i - 4 : i, xr = x < T - 1 ? i + 4 : i, yu = y > 0 ? i - T * 4 : i, yd = y < T - 1 ? i + T * 4 : i
             for (let c = 0; c < 3; c++) {
               const blur = (a[xl + c] + a[xr + c] + a[yu + c] + a[yd + c] + 4 * a[i + c]) / 8
-              o[i + c] = Math.min(255, Math.max(0, a[i + c] + (a[i + c] - blur) * k * 2))
+              // gentle and capped: bright catchlights in the eyes must not turn into clipped white dots
+              const d = Math.max(-14, Math.min(14, (a[i + c] - blur) * k))
+              o[i + c] = Math.min(255, Math.max(0, a[i + c] + d))
             }
             o[i + 3] = 255
           }
