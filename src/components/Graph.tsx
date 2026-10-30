@@ -28,7 +28,7 @@ const VERT = /* glsl */ `
   attribute vec2 aP; // x: seed, y: size in the portrait
   attribute vec4 aCol; // rgb of the portrait pixel, a = how opaque it is (fades out at the edges)
   varying vec4 vCol;
-  varying float vMix, vNoise;
+  varying float vMix, vNoise, vShow;
 
   void main() {
     float seed = aP.x;
@@ -45,6 +45,8 @@ const VERT = /* glsl */ `
     float f = smoothstep(0.95, 0.0, length(d));
     p.xy += normalize(d + vec2(1e-4)) * f * 0.38 * uStrength;
     p.z += f * 0.45 * uStrength;
+    // at rest the crisp photo is shown on its own; particles only appear while dissolving or under the cursor
+    vShow = max(smoothstep(0.0, 0.05, uProg), f * uStrength);
 
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
@@ -60,7 +62,7 @@ const FRAG = /* glsl */ `
   uniform float uRound, uProg;
   uniform vec3 uLogo;
   varying vec4 vCol;
-  varying float vMix, vNoise;
+  varying float vMix, vNoise, vShow;
   void main() {
     float d = length(gl_PointCoord - 0.5);
     if (uRound > 0.5 && d > 0.5) discard;
@@ -70,7 +72,7 @@ const FRAG = /* glsl */ `
     vec3 col = mix(skin, logo, vMix);
     // once the crisp vector mark has taken over, the particles fade out so its edge is a clean line
     float handoff = 1.0 - smoothstep(0.9, 1.0, uProg);
-    gl_FragColor = vec4(col, a * mix(vCol.a, 1.0, vMix) * handoff);
+    gl_FragColor = vec4(col, a * mix(vCol.a, 1.0, vMix) * handoff * vShow);
   }
 `
 
@@ -379,7 +381,7 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
           void main() {
             vec4 t = texture2D(uMap, vUv);
             float hole = smoothstep(0.0, 0.95, length(vP - uMouse));
-            float a = t.a * (1.0 - smoothstep(0.0, 0.22, uProg)) * 0.9 * mix(1.0, hole, uStrength);
+            float a = t.a * (1.0 - smoothstep(0.03, 0.2, uProg)) * mix(1.0, hole, uStrength);
             gl_FragColor = vec4(pow(t.rgb, vec3(1.0 / 2.2)), a);
           }`,
         transparent: true,

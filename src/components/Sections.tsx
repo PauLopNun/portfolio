@@ -561,7 +561,16 @@ export function Contact() {
 
         <footer className="mt-32 flex flex-col justify-between gap-4 border-t-2 border-line pt-6 font-mono text-xs text-dim sm:flex-row">
           <p>Designed and built by Pau López Núñez · React, Three.js, Tailwind CSS and Framer Motion.</p>
-          <a href="#top" className="font-semibold text-ink hover:text-accent-ink">
+          <a
+            href="#top"
+            onClick={(e) => {
+              // a direct jump: a long smooth scroll back through the pinned hero cannot keep the 3D portrait in sync
+              e.preventDefault()
+              window.scrollTo({ top: 0, behavior: "instant" })
+              history.replaceState(null, "", window.location.pathname + window.location.search)
+            }}
+            className="font-semibold text-ink hover:text-accent-ink"
+          >
             Back to top ↑
           </a>
         </footer>
