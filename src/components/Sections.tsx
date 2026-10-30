@@ -48,9 +48,9 @@ function Pill({ children }: { children: ReactNode }) {
   )
 }
 
-function Bullets({ items }: { items: string[] }) {
+function Bullets({ items, compact }: { items: string[]; compact?: boolean }) {
   return (
-    <ul className="mt-4 space-y-2 text-[0.95rem] leading-relaxed">
+    <ul className={compact ? "mt-3 space-y-1.5 text-[0.9rem] leading-snug" : "mt-4 space-y-2 text-[0.95rem] leading-relaxed"}>
       {items.map((p) => (
         <li key={p} className="relative pl-6 before:absolute before:left-0 before:top-[0.55em] before:h-2.5 before:w-2.5 before:rotate-45 before:border-2 before:border-line before:bg-accent">
           {p}
@@ -287,47 +287,16 @@ export function Experience() {
 
 // Cover = the GitHub social preview of the repo, refreshed at build time by scripts/fetch-previews.mjs
 
-function Tilt({ href, label, children }: { href: string; label: string; children: ReactNode }) {
-  const rx = useSpring(0, { stiffness: 200, damping: 18 })
-  const ry = useSpring(0, { stiffness: 200, damping: 18 })
-  const { motion: m } = useMotionPref()
-  const onMove = (e: PointerEvent<HTMLAnchorElement>) => {
-    if (m === "off") return
-    const r = e.currentTarget.getBoundingClientRect()
-    ry.set(((e.clientX - r.left) / r.width - 0.5) * 14)
-    rx.set(((e.clientY - r.top) / r.height - 0.5) * -14)
-  }
-  return (
-    <div className="h-full" style={{ perspective: 1000 }}>
-      <motion.a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={label}
-        onPointerMove={onMove}
-        onPointerLeave={() => {
-          rx.set(0)
-          ry.set(0)
-        }}
-        style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
-        className="block h-full rounded-3xl"
-      >
-        {children}
-      </motion.a>
-    </div>
-  )
-}
-
 function Cover({ repo }: { repo: string }) {
   return (
-    <div className="group relative aspect-[2/1] overflow-hidden lg:aspect-auto lg:h-full rounded-3xl border-2 border-line bg-white shadow-[6px_6px_0_0_var(--shadow)]">
+    <div className="relative aspect-[2/1] overflow-hidden lg:aspect-auto lg:h-full rounded-3xl border-2 border-line bg-white shadow-[6px_6px_0_0_var(--shadow)]">
       <img
         src={asset(`/images/project-${repo.toLowerCase()}.png`)}
         alt=""
         width={1280}
         height={640}
         loading="lazy"
-        className="h-full w-full object-cover transition-transform lg:object-contain duration-500 ease-out group-hover:scale-[1.03]"
+        className="h-full w-full object-cover lg:object-contain"
       />
     </div>
   )
@@ -342,24 +311,24 @@ export function Projects() {
           {featured.map((p, i) => (
             <article key={p.name} className="grid items-stretch gap-10 lg:grid-cols-2 lg:gap-20">
               <Reveal className={`h-full ${i % 2 ? "lg:order-2" : ""}`}>
-                <Tilt href={p.links[0].href} label={`${p.name} on GitHub`}>
+                <a href={p.links[0].href} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on GitHub`} className="block h-full rounded-3xl">
                   <Cover repo={p.repo} />
-                </Tilt>
+                </a>
               </Reveal>
-              <Reveal delay={0.1}>
+              <Reveal delay={0.1} className="flex flex-col justify-center">
                 <p className="font-mono text-sm text-dim">{p.context}</p>
-                <h3 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
+                <h3 className="mt-1 font-display text-4xl font-extrabold tracking-tight text-ink">
                   {p.name}
                   <span className="text-accent-ink">.</span>
                 </h3>
-                <p className="mt-4 text-lg leading-relaxed">{p.summary}</p>
-                <Bullets items={p.points} />
-                <ul className="mt-5 flex flex-wrap gap-2">
+                <p className="mt-3 text-base leading-snug">{p.summary}</p>
+                <Bullets items={p.points} compact />
+                <ul className="mt-4 flex flex-wrap gap-1.5">
                   {p.stack.map((s) => (
                     <Pill key={s}>{s}</Pill>
                   ))}
                 </ul>
-                <div className="mt-8 flex flex-wrap gap-4">
+                <div className="mt-6 flex flex-wrap gap-3">
                   {p.links.map((l, k) => (
                     <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className={`btn ${k === 0 ? "btn-accent" : ""}`}>
                       {l.label} <ArrowUpRight className="h-4 w-4" />

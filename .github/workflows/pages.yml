@@ -30,7 +30,7 @@ jobs:
         run: npm run previews
       - run: npm run build
         env:
-          BASE_PATH: /portfolio-v2/
+          BASE_PATH: /portfolio/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

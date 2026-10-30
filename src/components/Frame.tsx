@@ -95,10 +95,25 @@ export function Frame() {
   }, [])
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : ""
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
     window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
+    if (!open) return () => window.removeEventListener("keydown", onKey)
+
+    // Freeze the page behind the menu without hiding the scrollbar: hiding it widens the viewport and shifts everything by its width.
+    const y = window.scrollY
+    const block = (e: Event) => {
+      if (!(e.target as Element | null)?.closest?.("#site-menu")) e.preventDefault()
+    }
+    const hold = () => window.scrollTo(0, y)
+    window.addEventListener("wheel", block, { passive: false })
+    window.addEventListener("touchmove", block, { passive: false })
+    window.addEventListener("scroll", hold)
+    return () => {
+      window.removeEventListener("keydown", onKey)
+      window.removeEventListener("wheel", block)
+      window.removeEventListener("touchmove", block)
+      window.removeEventListener("scroll", hold)
+    }
   }, [open])
 
   return (
@@ -165,7 +180,7 @@ export function Frame() {
           closed: { clipPath: "inset(0 0 100% 0 round 22px)", transitionEnd: { visibility: "hidden" } },
         }}
         transition={{ duration: 0.55, ease: [0.76, 0, 0.24, 1] }}
-        className="invisible fixed inset-2.5 z-[45] overflow-y-auto rounded-[20px] bg-bg-2 sm:inset-3.5"
+        className="invisible fixed inset-2.5 z-[45] overflow-y-auto overscroll-contain rounded-[20px] bg-bg-2 sm:inset-3.5"
       >
         <div className="relative mx-auto flex min-h-full max-w-6xl flex-col justify-center px-6 pb-12 pt-28 sm:px-12">
           <ul>

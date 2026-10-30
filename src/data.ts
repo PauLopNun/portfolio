@@ -1,4 +1,4 @@
-// Files in /public, prefixed with the base path the site is served from (GitHub Pages: /portfolio-v2/)
+// Files in /public, prefixed with the base path the site is served from (GitHub Pages: /portfolio/)
 export const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`
 
 export const profile = {
