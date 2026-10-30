@@ -202,76 +202,10 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
       const g = c.getContext('2d', { willReadFrequently: true })!
       g.drawImage(img, 0, 0, N, N)
       const px = g.getImageData(0, 0, N, N).data
-      const at = (x: number, y: number, k: number) => px[(y * N + x) * 4 + k] / 255
 
-      // Backdrop = pixels close to the backdrop colour that connect to the image border. Anything enclosed
-      // by the subject (the shadow under the jaw, gaps between curls) stays part of the portrait.
-      const looksLikeBackdrop = (x: number, y: number) => {
-        const yb = Math.min(y, Math.floor(N * 0.45)) // backdrop is read from the upper rows, below them the border is the shirt
-        const u = x / N
-        const i = (y * N + x) * 4
-        const pr = px[i] / 255
-        const pg = px[i + 1] / 255
-        const pb = px[i + 2] / 255
-        // the backdrop is a neutral grey; warm skin shadows are not, so the fill cannot leak into the neck
-        const neutral = Math.abs(pr - pb) < 0.06 && Math.abs(pg - (pr + pb) / 2) < 0.05
-        return (
-          neutral &&
-          Math.hypot(
-            pr - (at(2, yb, 0) * (1 - u) + at(N - 3, yb, 0) * u),
-            pg - (at(2, yb, 1) * (1 - u) + at(N - 3, yb, 1) * u),
-            pb - (at(2, yb, 2) * (1 - u) + at(N - 3, yb, 2) * u),
-          ) < 0.15
-        )
-      }
-      const backdrop = new Uint8Array(N * N)
-      const stack: number[] = []
-      const flood = (x: number, y: number) => {
-        const k = y * N + x
-        if (!backdrop[k] && looksLikeBackdrop(x, y)) {
-          backdrop[k] = 1
-          stack.push(k)
-        }
-      }
-      for (let t = 0; t < N; t++) {
-        flood(t, 0)
-        flood(t, N - 1)
-        flood(0, t)
-        flood(N - 1, t)
-      }
-      while (stack.length) {
-        const k = stack.pop()!
-        const x = k % N
-        const y = (k - x) / N
-        if (x > 0) flood(x - 1, y)
-        if (x < N - 1) flood(x + 1, y)
-        if (y > 0) flood(x, y - 1)
-        if (y < N - 1) flood(x, y + 1)
-      }
-
-      // Shave the pale grey fringe the backdrop leaves along the hair: light, colourless pixels touching the backdrop are backdrop too.
-      for (let pass = 0; pass < 3; pass++) {
-        const edge: number[] = []
-        for (let y = 1; y < N - 1; y++)
-          for (let x = 1; x < N - 1; x++) {
-            const k = y * N + x
-            if (backdrop[k] || !(backdrop[k - 1] || backdrop[k + 1] || backdrop[k - N] || backdrop[k + N])) continue
-            const i = k * 4
-            const lum = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255
-            const grey = Math.max(px[i], px[i + 1], px[i + 2]) - Math.min(px[i], px[i + 1], px[i + 2]) < 28
-            if (grey && lum > 0.36 && y < N * 0.55) edge.push(k)
-          }
-        edge.forEach((k) => (backdrop[k] = 1))
-      }
-
-      // Backdrop seen through gaps between curls cannot be reached from the border: hair is never pale grey, skin is warm, so remove those by colour.
-      for (let y = 0; y < N * 0.38; y++)
-        for (let x = 0; x < N; x++) {
-          const i = (y * N + x) * 4
-          const lum = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255
-          const sat = Math.max(px[i], px[i + 1], px[i + 2]) - Math.min(px[i], px[i + 1], px[i + 2])
-          if (lum > 0.5 && sat < 42 && px[i + 2] >= px[i] - 4) backdrop[y * N + x] = 1
-        }
+      // The photo is a background-removal cutout (rembg + BiRefNet, alpha matting): its alpha channel already
+      // holds the clean silhouette, hair strands included.
+      const alphaAt = (x: number, y: number) => px[(y * N + x) * 4 + 3] / 255
 
       const mask = new ImageData(N, N) // silhouette of the portrait, used to cut out the photo underneath
       const A: number[] = []
@@ -287,14 +221,14 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
           const v = y / N
           const radial = Math.hypot((u - 0.5) / 0.5, (v - 0.42) / 0.5) // an ellipse that reaches zero before the bottom of the photo: round, not cut flat
           const fade = 1 - smooth(radial, 0.66, 1.0)
-          const isBackdrop = backdrop[y * N + x] === 1
-          mask.data[i + 3] = isBackdrop ? 0 : 255 * fade
-          if (isBackdrop || fade < 0.03) continue // the soft edge is an alpha fade, not random holes
+          const alpha = alphaAt(x, y)
+          mask.data[i + 3] = 255 * fade // the cutout already carries the silhouette; this only rounds the bottom
+          if (alpha < 0.03 || fade < 0.03) continue // the soft edge is an alpha fade, not random holes
           const jx = PIXEL ? 0 : (rand() - 0.5) * CELL * 0.5
           const jy = PIXEL ? 0 : (rand() - 0.5) * CELL * 0.5
           const half = PIXEL ? 0.5 / N : 0 // pixels sit on cell centres
           A.push((u + half - 0.5) * PORTRAIT + jx, (0.5 - v - half) * PORTRAIT + jy, 0)
-          col.push(r, gg, b, fade)
+          col.push(r, gg, b, fade * alpha)
           lum.push(0.2126 * r + 0.7152 * gg + 0.0722 * b)
         }
       const M = lum.length
@@ -358,12 +292,16 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
             const i = (y * T + x) * 4
             const xl = x > 0 ? i - 4 : i, xr = x < T - 1 ? i + 4 : i, yu = y > 0 ? i - T * 4 : i, yd = y < T - 1 ? i + T * 4 : i
             for (let c = 0; c < 3; c++) {
+              if (a[i + 3] < 250) {
+                o[i + c] = a[i + c] // soft hair edges are left as they are: no halos
+                continue
+              }
               const blur = (a[xl + c] + a[xr + c] + a[yu + c] + a[yd + c] + 4 * a[i + c]) / 8
               // gentle and capped: bright catchlights in the eyes must not turn into clipped white dots
               const d = Math.max(-14, Math.min(14, (a[i + c] - blur) * k))
               o[i + c] = Math.min(255, Math.max(0, a[i + c] + d))
             }
-            o[i + 3] = 255
+            o[i + 3] = a[i + 3]
           }
         pg.putImageData(out, 0, 0)
       }
@@ -445,7 +383,7 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
     img.onload = loaded
     logo.onload = loaded
     logo.onerror = loaded
-    img.src = `${base}images/${dark ? 'portrait.webp' : 'portrait-light.webp'}` // the photo whose backdrop matches the theme
+    img.src = `${base}images/${dark ? 'portrait-cut-dark.webp' : 'portrait-cut-light.webp'}` // cutout of the photo whose lighting matches the theme
     logo.src = `${base}icons/github.svg`
 
     // ---- viewport + pointer
