@@ -65,8 +65,8 @@ const FRAG = /* glsl */ `
     float d = length(gl_PointCoord - 0.5);
     if (uRound > 0.5 && d > 0.5) discard;
     float a = uRound > 0.5 ? smoothstep(0.5, 0.36, d) : 1.0;
-    vec3 skin = (vCol.rgb * 1.05 + 0.01) * (0.92 + 0.16 * vNoise);
-    vec3 logo = uLogo * (0.82 + 0.18 * vNoise);
+    vec3 skin = vCol.rgb * 1.04; // smooth: no random brightness grain
+    vec3 logo = uLogo * (0.9 + 0.1 * vNoise);
     vec3 col = mix(skin, logo, vMix);
     gl_FragColor = vec4(col, a * mix(vCol.a, 1.0, vMix));
   }
@@ -242,6 +242,30 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
         if (y < N - 1) flood(x, y + 1)
       }
 
+      // Shave the pale grey fringe the backdrop leaves along the hair: light, colourless pixels touching the backdrop are backdrop too.
+      for (let pass = 0; pass < 3; pass++) {
+        const edge: number[] = []
+        for (let y = 1; y < N - 1; y++)
+          for (let x = 1; x < N - 1; x++) {
+            const k = y * N + x
+            if (backdrop[k] || !(backdrop[k - 1] || backdrop[k + 1] || backdrop[k - N] || backdrop[k + N])) continue
+            const i = k * 4
+            const lum = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255
+            const grey = Math.max(px[i], px[i + 1], px[i + 2]) - Math.min(px[i], px[i + 1], px[i + 2]) < 28
+            if (grey && lum > 0.36 && y < N * 0.55) edge.push(k)
+          }
+        edge.forEach((k) => (backdrop[k] = 1))
+      }
+
+      // Backdrop seen through gaps between curls cannot be reached from the border: hair is never pale grey, skin is warm, so remove those by colour.
+      for (let y = 0; y < N * 0.38; y++)
+        for (let x = 0; x < N; x++) {
+          const i = (y * N + x) * 4
+          const lum = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255
+          const sat = Math.max(px[i], px[i + 1], px[i + 2]) - Math.min(px[i], px[i + 1], px[i + 2])
+          if (lum > 0.5 && sat < 42 && px[i + 2] >= px[i] - 4) backdrop[y * N + x] = 1
+        }
+
       const mask = new ImageData(N, N) // silhouette of the portrait, used to cut out the photo underneath
       const A: number[] = []
       const col: number[] = []
@@ -258,12 +282,12 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
           const fade = 1 - smooth(radial, 0.7, 1.02)
           const isBackdrop = backdrop[y * N + x] === 1
           mask.data[i + 3] = isBackdrop ? 0 : 255 * fade
-          if (isBackdrop || (!PIXEL && rand() < 1 - fade)) continue // pixel mode fades by colour instead, see below
+          if (isBackdrop || fade < 0.03) continue // the soft edge is an alpha fade, not random holes
           const jx = PIXEL ? 0 : (rand() - 0.5) * CELL * 0.5
           const jy = PIXEL ? 0 : (rand() - 0.5) * CELL * 0.5
           const half = PIXEL ? 0.5 / N : 0 // pixels sit on cell centres
           A.push((u + half - 0.5) * PORTRAIT + jx, (0.5 - v - half) * PORTRAIT + jy, 0)
-          col.push(r, gg, b, PIXEL ? fade : 1) // pixel mode fades the edges out with alpha
+          col.push(r, gg, b, fade)
           lum.push(0.2126 * r + 0.7152 * gg + 0.0722 * b)
         }
       const M = lum.length
@@ -429,10 +453,25 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
       last = now
       if (running) frame(dt)
     }
-    const io = new IntersectionObserver(([en]) => (running = en.isIntersecting && !reduced && !document.hidden))
+    let inView = true
+    const io = new IntersectionObserver(([en]) => {
+      inView = en.isIntersecting
+      running = inView && !reduced && !document.hidden
+    })
     io.observe(canvas)
-    const onVis = () => document.hidden && (running = false)
+    // pause while the tab is hidden and resume when it comes back (the observer does not fire again by itself)
+    const onVis = () => {
+      running = inView && !reduced && !document.hidden
+      last = performance.now()
+    }
     document.addEventListener('visibilitychange', onVis)
+    // the cursor left the window or the window lost focus: close the hole it leaves in the portrait
+    const release = () => {
+      mouse.active = false
+      uniforms.uMouse.value.set(999, 999)
+    }
+    document.documentElement.addEventListener('mouseleave', release)
+    window.addEventListener('blur', release)
     if (!reduced) raf = requestAnimationFrame(tick)
 
     return () => {
@@ -442,6 +481,8 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
       io.disconnect()
       window.removeEventListener('pointermove', onMove)
       document.removeEventListener('visibilitychange', onVis)
+      document.documentElement.removeEventListener('mouseleave', release)
+      window.removeEventListener('blur', release)
       geo.dispose()
       material.dispose()
       underTex?.dispose()
