@@ -57,7 +57,7 @@ const VERT = /* glsl */ `
 `
 
 const FRAG = /* glsl */ `
-  uniform float uRound;
+  uniform float uRound, uProg;
   uniform vec3 uLogo;
   varying vec4 vCol;
   varying float vMix, vNoise;
@@ -68,7 +68,9 @@ const FRAG = /* glsl */ `
     vec3 skin = vCol.rgb * 1.04; // smooth: no random brightness grain
     vec3 logo = uLogo * (0.9 + 0.1 * vNoise);
     vec3 col = mix(skin, logo, vMix);
-    gl_FragColor = vec4(col, a * mix(vCol.a, 1.0, vMix));
+    // once the crisp vector mark has taken over, the particles fade out so its edge is a clean line
+    float handoff = 1.0 - smoothstep(0.9, 1.0, uProg);
+    gl_FragColor = vec4(col, a * mix(vCol.a, 1.0, vMix) * handoff);
   }
 `
 
@@ -335,11 +337,29 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
       geo.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(col), 4))
 
       // the photo itself, cut out and sitting just behind the particles: it fills the gaps between dots
-      const T = 864 // the photo at its native resolution
+      const T = small ? 1296 : 1728 // upscaled with high-quality smoothing, then sharpened below
       const pc = document.createElement('canvas')
       pc.width = pc.height = T
       const pg = pc.getContext('2d')!
+      pg.imageSmoothingQuality = 'high'
       pg.drawImage(img, 0, 0, T, T)
+      {
+        // unsharp mask (3x3): crisper eyes, brows and hair strands without adding noise
+        const src = pg.getImageData(0, 0, T, T)
+        const out = pg.createImageData(T, T)
+        const a = src.data, o = out.data, k = 0.55
+        for (let y = 0; y < T; y++)
+          for (let x = 0; x < T; x++) {
+            const i = (y * T + x) * 4
+            const xl = x > 0 ? i - 4 : i, xr = x < T - 1 ? i + 4 : i, yu = y > 0 ? i - T * 4 : i, yd = y < T - 1 ? i + T * 4 : i
+            for (let c = 0; c < 3; c++) {
+              const blur = (a[xl + c] + a[xr + c] + a[yu + c] + a[yd + c] + 4 * a[i + c]) / 8
+              o[i + c] = Math.min(255, Math.max(0, a[i + c] + (a[i + c] - blur) * k * 2))
+            }
+            o[i + 3] = 255
+          }
+        pg.putImageData(out, 0, 0)
+      }
       const mc = document.createElement('canvas')
       mc.width = mc.height = N
       mc.getContext('2d')!.putImageData(mask, 0, 0)
@@ -369,7 +389,7 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
 
       // the GitHub mark itself, as a crisp vector render: it takes over from the particles as they settle
       if (!PIXEL) {
-        const LT = 1024
+        const LT = 2048
         const lcv = document.createElement('canvas')
         lcv.width = lcv.height = LT
         const lcx = lcv.getContext('2d')!
@@ -379,7 +399,7 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
         lcx.fillStyle = `rgb(${Math.round(ink.x * 255)},${Math.round(ink.y * 255)},${Math.round(ink.z * 255)})`
         lcx.fillRect(0, 0, LT, LT)
         logoTex = new THREE.CanvasTexture(lcv)
-        logoTex.colorSpace = THREE.SRGBColorSpace
+        logoTex.colorSpace = THREE.NoColorSpace // raw sRGB values: the page colour is reproduced exactly
         logoTex.anisotropy = renderer.capabilities.getMaxAnisotropy()
         logoMat = new THREE.ShaderMaterial({
           uniforms: { uMap: { value: logoTex }, uProg: uniforms.uProg, uMouse: uniforms.uMouse, uStrength: uniforms.uStrength },
@@ -388,8 +408,8 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
             void main() {
               vec4 t = texture2D(uMap, vUv);
               float hole = smoothstep(0.0, 0.95, length(vP - uMouse));
-              float a = t.a * smoothstep(0.82, 1.0, uProg) * 0.94 * mix(1.0, hole, uStrength);
-              gl_FragColor = vec4(pow(t.rgb, vec3(1.0 / 2.2)), a);
+              float a = t.a * smoothstep(0.8, 0.97, uProg) * mix(1.0, hole, uStrength);
+              gl_FragColor = vec4(t.rgb, a);
             }`,
           transparent: true,
           depthWrite: false,

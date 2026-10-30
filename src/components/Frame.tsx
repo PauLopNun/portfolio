@@ -129,10 +129,7 @@ export function Frame() {
         className="pointer-events-none fixed inset-x-2 top-2 z-[42] h-[calc(100lvh-1rem)] rounded-[22px] border-2 border-line shadow-[0_0_0_100vmax_var(--bg)] sm:inset-x-3 sm:top-3 sm:h-[calc(100lvh-1.5rem)]"
       />
 
-      {/* Side rails */}
-      <p className="pointer-events-none fixed bottom-10 left-6 z-40 hidden origin-bottom-left -rotate-90 translate-x-4 font-mono text-[0.68rem] uppercase tracking-[0.25em] text-dim lg:block">
-        © 2026 · Made in València
-      </p>
+      {/* Scroll progress rail */}
       <div aria-hidden className="fixed right-7 top-1/2 z-40 hidden h-40 w-[3px] -translate-y-1/2 overflow-hidden rounded-full bg-line/15 lg:block">
         <motion.div style={{ scaleY: progress }} className="h-full w-full origin-top rounded-full bg-accent" />
       </div>
