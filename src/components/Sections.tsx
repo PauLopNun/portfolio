@@ -144,16 +144,16 @@ function Terminal() {
   const done = n >= profileJson.length
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative h-full">
       <div aria-hidden className="hatch absolute inset-0 translate-x-4 translate-y-4 rounded-2xl opacity-25" />
-      <div className="sticker relative overflow-hidden rounded-2xl !shadow-none">
+      <div className="sticker relative flex h-full flex-col overflow-hidden rounded-2xl !shadow-none">
         <div className="flex items-center gap-2 border-b-2 border-line bg-bg-2 px-4 py-3">
           <span className="h-3 w-3 rounded-full border-2 border-line bg-accent" />
           <span className="h-3 w-3 rounded-full border-2 border-line bg-sun" />
           <span className="h-3 w-3 rounded-full border-2 border-line bg-mint" />
           <span className="ml-3 font-mono text-xs text-dim">~/pau — zsh</span>
         </div>
-        <div className="p-5 font-mono text-[0.8rem] leading-relaxed text-ink sm:p-6 sm:text-sm">
+        <div className="flex-1 p-5 font-mono text-[0.8rem] leading-relaxed text-ink sm:p-6 sm:text-sm">
           <p>
             <span className="text-mint-ink">$</span> cat pau.json
           </p>
@@ -182,8 +182,8 @@ export function About() {
     <section id="about" className={shell}>
       <div className={inner}>
         <SectionHead num="01" kicker="About" title="Backends with clear rules" />
-        <div className="grid items-start gap-14 lg:grid-cols-2 lg:gap-20">
-          <Reveal>
+        <div className="grid items-stretch gap-14 lg:grid-cols-2 lg:gap-20">
+          <Reveal className="h-full">
             <Terminal />
           </Reveal>
           <div className="space-y-6 text-lg leading-relaxed">
@@ -298,7 +298,7 @@ function Tilt({ href, label, children }: { href: string; label: string; children
     rx.set(((e.clientY - r.top) / r.height - 0.5) * -14)
   }
   return (
-    <div style={{ perspective: 1000 }}>
+    <div className="h-full" style={{ perspective: 1000 }}>
       <motion.a
         href={href}
         target="_blank"
@@ -310,7 +310,7 @@ function Tilt({ href, label, children }: { href: string; label: string; children
           ry.set(0)
         }}
         style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
-        className="block rounded-3xl"
+        className="block h-full rounded-3xl"
       >
         {children}
       </motion.a>
@@ -320,14 +320,14 @@ function Tilt({ href, label, children }: { href: string; label: string; children
 
 function Cover({ repo }: { repo: string }) {
   return (
-    <div className="group relative aspect-[2/1] overflow-hidden rounded-3xl border-2 border-line bg-white shadow-[6px_6px_0_0_var(--shadow)]">
+    <div className="group relative aspect-[2/1] overflow-hidden lg:aspect-auto lg:h-full rounded-3xl border-2 border-line bg-white shadow-[6px_6px_0_0_var(--shadow)]">
       <img
         src={asset(`/images/project-${repo.toLowerCase()}.png`)}
         alt=""
         width={1280}
         height={640}
         loading="lazy"
-        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+        className="h-full w-full object-cover transition-transform lg:object-contain duration-500 ease-out group-hover:scale-[1.03]"
       />
     </div>
   )
@@ -340,8 +340,8 @@ export function Projects() {
         <SectionHead num="03" kicker="Projects" title="Things I've built" />
         <div className="space-y-24 sm:space-y-32">
           {featured.map((p, i) => (
-            <article key={p.name} className="grid items-start gap-10 lg:grid-cols-2 lg:gap-20">
-              <Reveal className={`lg:sticky lg:top-28 ${i % 2 ? "lg:order-2" : ""}`}>
+            <article key={p.name} className="grid items-stretch gap-10 lg:grid-cols-2 lg:gap-20">
+              <Reveal className={`h-full ${i % 2 ? "lg:order-2" : ""}`}>
                 <Tilt href={p.links[0].href} label={`${p.name} on GitHub`}>
                   <Cover repo={p.repo} />
                 </Tilt>
