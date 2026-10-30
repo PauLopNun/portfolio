@@ -168,15 +168,16 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
 
     // ---- frame
     let prog = 0
+    const targetNow = () => Math.min(Math.max((heroState.progress - 0.12) / 0.88, 0), 1)
     let time = 0
     const mouse = { x: 999, y: 999, active: false }
     const frame = (dt: number) => {
       time += dt
       // the portrait stays whole for the first part of the scroll, then dissolves
-      const target = Math.min(Math.max((heroState.progress - 0.12) / 0.88, 0), 1)
+      const target = targetNow()
       // a jump (Back to top, anchor links) must not play the whole morph backwards over the page: snap when far away
-      if (Math.abs(target - prog) > 0.35) prog = target
-      else prog += (target - prog) * Math.min(1, dt * 6)
+      if (Math.abs(target - prog) > 0.12) prog = target
+      else prog += (target - prog) * Math.min(1, dt * 14)
       const e = smooth(prog, 0, 1)
       uniforms.uTime.value = time
       uniforms.uProg.value = prog
@@ -478,6 +479,7 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
     let inView = true
     const io = new IntersectionObserver(([en]) => {
       inView = en.isIntersecting
+      if (inView) prog = targetNow() // coming back into view: never replay the morph from a stale state
       running = inView && !reduced && !document.hidden
     })
     io.observe(canvas)
