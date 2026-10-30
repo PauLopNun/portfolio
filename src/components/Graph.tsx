@@ -113,12 +113,12 @@ export default function Graph({ dark, still }: { dark: boolean; still: boolean }
         home.x = 0
         home.y = 0.86 * halfH - PORTRAIT / 2
         end.x = 0
-        end.y = 0.75 * halfH - LOGO / 2
+        end.y = 0.17 * halfH
       } else {
         home.x = 0.45 * halfW
         home.y = -0.1
         end.x = 0.42 * halfW
-        end.y = 0.5
+        end.y = 0 // logo centred in the viewport, level with the closing text
       }
     }
 

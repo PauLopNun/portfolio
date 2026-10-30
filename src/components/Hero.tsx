@@ -121,7 +121,7 @@ export function Hero() {
         </motion.div>
 
         {pinned && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-end px-6 pb-[14svh] sm:px-12 lg:items-center lg:px-20 lg:pb-0">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-start px-6 pt-[60svh] sm:px-12 lg:items-center lg:px-20 lg:pt-0">
             <motion.div style={{ opacity: afterOpacity, y: afterY, visibility: afterVisibility }} className="pointer-events-auto mx-auto w-full max-w-7xl">
               <p className="display-shadow max-w-[14ch] font-display text-[clamp(2.4rem,6vw,5.75rem)] font-extrabold leading-[0.95] tracking-[-0.04em] text-ink">
                 See the code on GitHub.
