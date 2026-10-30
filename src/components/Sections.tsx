@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react"
-import { motion, useAnimationFrame, useInView, useMotionValue, useScroll, useSpring, useVelocity } from "framer-motion"
+import { motion, useAnimationFrame, useInView, useMotionValue, useSpring } from "framer-motion"
 import { ArrowUpRight, Check, Copy, Github, Linkedin, Mail } from "lucide-react"
 import { asset, certificates, education, featured, jobs, moreProjects, practices, profile, stack } from "../data"
 import { useMotionPref } from "../theme"
@@ -379,24 +379,20 @@ function ToolChip({ t, plain }: { t: { name: string; icon?: string }; plain?: bo
   )
 }
 
-/* An endless row: drifts on its own, speeds up while you scroll, stops under the cursor. */
+/* An endless row: drifts at a constant speed, stops under the cursor. */
 function MarqueeRow({ area, tools, reverse, plain }: { area: string; tools: { name: string; icon?: string }[]; reverse: boolean; plain?: boolean }) {
   const x = useMotionValue(0)
   const half = useRef<HTMLDivElement>(null)
   const box = useRef<HTMLDivElement>(null)
   const visible = useInView(box) // off screen rows do not animate
   const hold = useRef(false)
-  const boost = useRef(0)
   const { motion: m } = useMotionPref()
-  const { scrollY } = useScroll()
-  const velocity = useVelocity(scrollY)
 
   useAnimationFrame((_, delta) => {
     if (m === 'off' || !visible || !half.current) return
     const w = half.current.offsetWidth
     if (!w) return
-    boost.current += (Math.min(Math.abs(velocity.get()) / 60, 22) - boost.current) * 0.05 // eases in and out, so the rush lingers after you stop
-    const speed = hold.current ? 0 : 0.035 + boost.current * 0.02
+    const speed = hold.current ? 0 : 0.035 // constant: scrolling the page does not change it
     let next = x.get() + (reverse ? 1 : -1) * speed * delta
     if (next <= -w) next += w
     if (next > 0) next -= w
