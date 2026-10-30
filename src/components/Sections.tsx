@@ -316,19 +316,19 @@ export function Projects() {
                 </a>
               </Reveal>
               <Reveal delay={0.1} className="flex flex-col justify-center">
-                <p className="font-mono text-sm text-dim">{p.context}</p>
-                <h3 className="mt-1 font-display text-4xl font-extrabold tracking-tight text-ink">
+                <p className="font-mono text-sm text-dim max-lg:order-2 max-lg:mt-2">{p.context}</p>
+                <h3 className="mt-1 font-display max-lg:order-1 max-lg:mt-0 text-4xl font-extrabold tracking-tight text-ink">
                   {p.name}
                   <span className="text-accent-ink">.</span>
                 </h3>
-                <p className="mt-3 text-base leading-snug">{p.summary}</p>
-                <Bullets items={p.points} compact />
-                <ul className="mt-4 flex flex-wrap gap-1.5">
+                <p className="mt-3 text-base leading-snug max-lg:order-3">{p.summary}</p>
+                <div className="max-lg:order-3"><Bullets items={p.points} compact /></div>
+                <ul className="mt-4 flex flex-wrap gap-1.5 max-lg:order-3">
                   {p.stack.map((s) => (
                     <Pill key={s}>{s}</Pill>
                   ))}
                 </ul>
-                <div className="mt-6 flex flex-wrap gap-3">
+                <div className="mt-6 flex flex-wrap gap-3 max-lg:order-3">
                   {p.links.map((l, k) => (
                     <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className={`btn ${k === 0 ? "btn-accent" : ""}`}>
                       {l.label} <ArrowUpRight className="h-4 w-4" />
