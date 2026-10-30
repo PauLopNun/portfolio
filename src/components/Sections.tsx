@@ -395,16 +395,17 @@ function MarqueeRow({ area, tools, reverse, plain }: { area: string; tools: { na
     if (m === 'off' || !visible || !half.current) return
     const w = half.current.offsetWidth
     if (!w) return
-    boost.current += (Math.min(Math.abs(velocity.get()) / 40, 18) - boost.current) * 0.08
-    const speed = hold.current ? 0 : 0.035 + boost.current * 0.006
+    boost.current += (Math.min(Math.abs(velocity.get()) / 60, 22) - boost.current) * 0.05 // eases in and out, so the rush lingers after you stop
+    const speed = hold.current ? 0 : 0.035 + boost.current * 0.02
     let next = x.get() + (reverse ? 1 : -1) * speed * delta
     if (next <= -w) next += w
     if (next > 0) next -= w
     x.set(next)
   })
 
+  // the repeated copies exist only for the endless loop: hidden from screen readers
   const row = (ref?: React.Ref<HTMLDivElement>) => (
-    <div ref={ref} className="flex shrink-0 gap-4 pr-4">
+    <div ref={ref} aria-hidden={ref ? undefined : true} className="flex shrink-0 gap-4 pr-4">
       {tools.map((t) => (
         <ToolChip key={t.name} t={t} plain={plain} />
       ))}
