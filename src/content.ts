@@ -61,7 +61,7 @@ const en: Content = {
   },
   sections: {
     experience: ["Experience", "Where I've shipped"],
-    projects: ["Projects", "Things I've built"],
+    projects: ["Projects", "Projects I've built"],
     stack: ["Stack", "Tools I reach for"],
     education: ["Education", "Always learning"],
     contact: ["Contact", "Let's build something solid."],
@@ -207,7 +207,7 @@ const es: Content = {
   },
   sections: {
     experience: ["Experiencia", "Dónde he trabajado"],
-    projects: ["Proyectos", "Cosas que he construido"],
+    projects: ["Proyectos", "Proyectos que he construido"],
     stack: ["Stack", "Herramientas que uso"],
     education: ["Formación", "Siempre aprendiendo"],
     contact: ["Contacto", "Construyamos algo sólido."],

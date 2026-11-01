@@ -212,7 +212,7 @@ export function Stack() {
             <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{t.practicesTitle}</h3>
             <ul className="flex flex-wrap gap-2">
               {t.practices.map((p) => (
-                <li key={p} className="rounded-lg border-2 border-line bg-sun px-2.5 py-1 text-sm font-semibold text-[#1b1d36]">
+                <li key={p} className="rounded-lg border-2 border-accent bg-accent/10 px-2.5 py-1 text-sm font-semibold text-accent-ink">
                   {p}
                 </li>
               ))}
