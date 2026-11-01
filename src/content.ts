@@ -12,7 +12,6 @@ export type Content = {
   skip: string
   hire: string
   hero: {
-    status: string
     hi: string
     role: string
     pitch: [string, string, string] // before, highlighted, after
@@ -53,7 +52,6 @@ const en: Content = {
   skip: "Skip to content",
   hire: "Hire me",
   hero: {
-    status: "Open to new opportunities",
     hi: "Hi, I'm",
     role: "Backend developer",
     pitch: ["I build ", "Java and Spring Boot", " services, connect them with events and ship them to the cloud."],
@@ -200,7 +198,6 @@ const es: Content = {
   skip: "Saltar al contenido",
   hire: "Contrátame",
   hero: {
-    status: "Abierto a nuevas oportunidades",
     hi: "Hola, soy",
     role: "Desarrollador backend",
     pitch: ["Construyo servicios con ", "Java y Spring Boot", ", los conecto mediante eventos y los despliego en la nube."],

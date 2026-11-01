@@ -25,6 +25,7 @@
   --mint-ink: #066a60;
   --sun: #ffc53d;
   --chip: #ffffff;
+  --portrait-bg: radial-gradient(circle at 50% 28%, #e3f5ef 0%, #a9ddd1 62%, #86c9bb 100%);
 }
 
 .dark {
@@ -43,6 +44,7 @@
   --mint-ink: #3dd6c0;
   --sun: #ffd166;
   --chip: #f7f3ec;
+  --portrait-bg: radial-gradient(circle at 50% 28%, #3d8a85 0%, #1f5655 62%, #163f40 100%);
 }
 
 @theme inline {

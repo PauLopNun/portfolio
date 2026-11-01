@@ -191,18 +191,25 @@ export function Header() {
           <motion.nav
             id="mobile-menu"
             aria-label="Site"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.2, 0.8, 0.2, 1] }}
-            className="overflow-hidden md:hidden"
+            // no height: "auto" here: Framer measures it and then calls window.scrollTo with a stale position, which cancels the jump to the chosen section
+            initial={{ y: -8, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -8, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
+            className="absolute inset-x-0 top-full border-b-2 border-line bg-bg md:hidden"
           >
             <ul className="px-3 pb-3 sm:px-5">
               {t.nav.map((n) => (
                 <li key={n.id}>
                   <a
                     href={`#${n.id}`}
-                    onClick={() => setOpen(false)}
+                    onClick={(e) => {
+                      // the browser's own jump to #id gets lost when the menu unmounts, so scroll explicitly
+                      e.preventDefault()
+                      setOpen(false)
+                      document.getElementById(n.id)?.scrollIntoView({ behavior: "smooth" })
+                      history.replaceState(null, "", `#${n.id}`)
+                    }}
                     className={`flex items-center justify-between border-t-2 border-line/10 py-3 font-display text-xl font-extrabold tracking-tight ${active === n.id ? "text-accent-ink" : "text-ink"}`}
                   >
                     {n.label}
