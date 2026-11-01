@@ -1,19 +1,19 @@
-
-import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react"
-import { motion, useAnimationFrame, useInView, useMotionValue, useSpring } from "framer-motion"
+import { useState, type ReactNode } from "react"
+import { motion } from "framer-motion"
 import { ArrowUpRight, Check, Copy, Github, Linkedin, Mail } from "lucide-react"
-import { asset, certificates, education, featured, jobs, moreProjects, practices, profile, stack } from "../data"
-import { useMotionPref } from "../theme"
+import { asset, certificates, educationLinks, moreProjects, profile, projectLinks, projectNames, projectStacks, stack } from "../data"
+import { useLang, useMotionPref } from "../theme"
 
 const ease = [0.2, 0.8, 0.2, 1] as const
 
 function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; delay?: number; className?: string }) {
+  const { motion: m } = useMotionPref()
   return (
     <motion.div
-      initial={{ opacity: 0, y: 36 }}
+      initial={m === "on" ? { opacity: 0, y: 24 } : false}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ delay, duration: 0.7, ease }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ delay, duration: 0.55, ease }}
       className={className}
     >
       {children}
@@ -23,36 +23,27 @@ function Reveal({ children, delay = 0, className = "" }: { children: ReactNode; 
 
 function SectionHead({ num, kicker, title }: { num: string; kicker: string; title: string }) {
   return (
-    <Reveal className="mb-10 sm:mb-20">
+    <Reveal className="mb-6 sm:mb-8">
       <p className="font-mono text-sm text-accent-ink">
         {num} <span className="text-dim">/ {kicker}</span>
       </p>
-      <h2 className="mt-3 font-display text-[clamp(2.6rem,7vw,5.5rem)] font-extrabold leading-[0.95] tracking-[-0.035em] text-ink">
+      <h2 className="mt-1 font-display text-[clamp(2rem,4.5vw,3.25rem)] font-extrabold leading-[0.98] tracking-[-0.035em] text-ink">
         {title}
-        <span className="text-accent-ink">.</span>
+        {!title.endsWith(".") && <span className="text-accent-ink">.</span>}
       </h2>
-      <motion.div
-        initial={{ scaleX: 0 }}
-        whileInView={{ scaleX: 1 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.3, duration: 0.8, ease }}
-        className="mt-6 h-[3px] w-24 origin-left rounded-full bg-mint"
-      />
     </Reveal>
   )
 }
 
 function Pill({ children }: { children: ReactNode }) {
-  return (
-    <li className="rounded-full border-2 border-line/80 px-3 py-0.5 font-mono text-[0.72rem] font-semibold text-ink">{children}</li>
-  )
+  return <li className="rounded-full border-2 border-line/70 px-2.5 py-0.5 font-mono text-[0.7rem] font-semibold text-ink">{children}</li>
 }
 
-function Bullets({ items, compact }: { items: string[]; compact?: boolean }) {
+function Bullets({ items }: { items: string[] }) {
   return (
-    <ul className={compact ? "mt-3 space-y-1.5 text-[0.9rem] leading-snug" : "mt-4 space-y-2 text-[0.95rem] leading-relaxed"}>
+    <ul className="mt-3 space-y-1.5 text-[0.88rem] leading-snug">
       {items.map((p) => (
-        <li key={p} className="relative pl-6 before:absolute before:left-0 before:top-[0.55em] before:h-2.5 before:w-2.5 before:rotate-45 before:border-2 before:border-line before:bg-accent">
+        <li key={p} className="relative pl-5 before:absolute before:left-0 before:top-[0.5em] before:h-2 before:w-2 before:rotate-45 before:border-2 before:border-line before:bg-accent">
           {p}
         </li>
       ))}
@@ -60,222 +51,47 @@ function Bullets({ items, compact }: { items: string[]; compact?: boolean }) {
   )
 }
 
-const shell = "relative px-6 py-20 sm:px-12 sm:py-36 lg:px-20"
-const inner = "mx-auto max-w-7xl"
-
-/* Marquee */
-
-export function Marquee() {
-  const words = ["Java", "Spring Boot", "AWS", "Docker", "PostgreSQL", "Angular", "Oracle PL/SQL", "RabbitMQ", "Testcontainers", "Hexagonal", "DDD"]
-  const row = (
-    <div className="flex shrink-0 items-center">
-      {words.map((w) => (
-        <span key={w} className="flex items-center font-display text-3xl font-extrabold tracking-tight sm:text-5xl">
-          <span className="px-6 sm:px-8">{w}</span>
-          <span className="text-2xl sm:text-3xl" aria-hidden>
-            ✱
-          </span>
-        </span>
-      ))}
-    </div>
-  )
-  return (
-    <div className="relative z-10 -my-4 overflow-hidden py-10" aria-hidden>
-      <div className="mx-2.5 overflow-hidden border-y-2 border-line bg-accent py-4 text-on-accent sm:mx-3.5">
-        <div className="anim-marquee flex w-max">
-          {row}
-          {row}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* About */
-
-const profileJson = `{
-  "name": "Pau López Núñez",
-  "role": "Backend developer",
-  "based_in": "València, ES",
-  "loves": [
-    "clear business rules",
-    "intentional persistence",
-    "tests that matter"
-  ],
-  "status": "open_to_work"
-}`
-
-function colorize(src: string) {
-  return src.split("\n").map((line, i) => {
-    const parts = line.split(/("[^"]*")(\s*:)?/g).filter((p) => p !== undefined && p !== "")
-    return (
-      <div key={i}>
-        {parts.map((p, k) =>
-          p.startsWith('"') ? (
-            <span key={k} className={parts[k + 1]?.trim() === ":" ? "text-mint-ink" : "text-accent-ink"}>
-              {p}
-            </span>
-          ) : (
-            <span key={k}>{p}</span>
-          ),
-        )}
-        {"​"}
-      </div>
-    )
-  })
-}
-
-function Terminal() {
-  const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: "-120px" })
-  const { motion: m } = useMotionPref()
-  const [n, setN] = useState(0)
-
-  useEffect(() => {
-    if (!inView) return
-    if (m === "off") {
-      setN(profileJson.length)
-      return
-    }
-    const id = setInterval(() => setN((v) => (v >= profileJson.length ? (clearInterval(id), v) : v + 3)), 16)
-    return () => clearInterval(id)
-  }, [inView, m])
-
-  const done = n >= profileJson.length
-
-  return (
-    <div ref={ref} className="relative h-full">
-      <div aria-hidden className="hatch absolute inset-0 translate-x-4 translate-y-4 rounded-2xl opacity-25" />
-      <div className="sticker relative flex h-full flex-col overflow-hidden rounded-2xl !shadow-none">
-        <div className="flex items-center gap-2 border-b-2 border-line bg-bg-2 px-4 py-3">
-          <span className="h-3 w-3 rounded-full border-2 border-line bg-accent" />
-          <span className="h-3 w-3 rounded-full border-2 border-line bg-sun" />
-          <span className="h-3 w-3 rounded-full border-2 border-line bg-mint" />
-          <span className="ml-3 font-mono text-xs text-dim">~/pau — zsh</span>
-        </div>
-        <div className="flex-1 p-5 font-mono text-[0.8rem] leading-relaxed text-ink sm:p-6 sm:text-sm">
-          <p>
-            <span className="text-mint-ink">$</span> cat pau.json
-          </p>
-          <pre className="mt-3 min-h-[17rem] whitespace-pre-wrap" aria-label={profileJson}>
-            {colorize(profileJson.slice(0, n))}
-            {!done && <span className="anim-blink inline-block h-4 w-2 translate-y-0.5 bg-accent" />}
-          </pre>
-          {done && (
-            <p className="text-ink">
-              <span className="text-mint-ink">$</span> <span className="anim-blink inline-block h-4 w-2 translate-y-0.5 bg-ink" />
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function About() {
-  const stats = [
-    { big: "3", small: "jobs and internships since 2025", tone: "bg-sun" },
-    { big: "AWS", small: "GameDay national phase, Jan 2026", tone: "bg-mint" },
-    { big: "14★", small: "GitHub stars on the supply chain simulator", tone: "bg-accent" },
-  ]
-  return (
-    <section id="about" className={shell}>
-      <div className={inner}>
-        <SectionHead num="01" kicker="About" title="Backends with clear rules" />
-        <div className="grid items-stretch gap-14 lg:grid-cols-2 lg:gap-20">
-          <Reveal className="h-full">
-            <Terminal />
-          </Reveal>
-          <div className="space-y-6 text-lg leading-relaxed">
-            <Reveal delay={0.05}>
-              <p>
-                I&apos;m a backend developer from Valencia who likes systems where the{" "}
-                <span className="font-semibold text-ink">business rules are clear</span>, persistence is intentional and tests
-                protect the behaviour that matters.
-              </p>
-            </Reveal>
-            <Reveal delay={0.1}>
-              <p>
-                Right now I work on <span className="font-semibold text-ink">enterprise applications for the insurance sector</span>,
-                moving legacy Oracle PL/SQL and Struts features to <span className="font-semibold text-ink">Spring Boot REST APIs</span>{" "}
-                and Angular. Before that I built event-driven microservices with RabbitMQ at{" "}
-                <span className="font-semibold text-ink">GFT Technologies</span> and an email campaign system at Feria Valencia.
-              </p>
-            </Reveal>
-            <Reveal delay={0.15}>
-              <p>
-                In the evenings I&apos;m studying a <span className="font-semibold text-ink">Cloud Computing specialization</span> focused
-                on AWS, and last January my team reached the national phase of the AWS GameDay championship.
-              </p>
-            </Reveal>
-            <div className="grid gap-4 pt-4 sm:grid-cols-3">
-              {stats.map((s, i) => (
-                <Reveal key={s.small} delay={0.2 + i * 0.08}>
-                  <div className="sticker sticker-hover h-full rounded-2xl p-4">
-                    <span className={`inline-block rounded-lg border-2 border-line px-2 font-display text-2xl font-extrabold text-[#17182c] ${s.tone}`}>
-                      {s.big}
-                    </span>
-                    <p className="mt-2 text-sm leading-snug text-body">{s.small}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
+const shell = "relative px-4 py-12 sm:px-8 sm:py-16"
+const inner = "mx-auto max-w-6xl"
 
 /* Experience */
 
-function ExperienceCard({ job, i }: { job: (typeof jobs)[number]; i: number }) {
-  return (
-    <li>
-      <Reveal>
-        <article className="sticker sticker-hover grid gap-6 rounded-3xl p-6 sm:p-8 md:grid-cols-[13rem_1fr]">
-          <div>
-            <p className="mb-3 font-display text-5xl font-extrabold leading-none tracking-[0.06em] text-card [-webkit-text-stroke:4px_var(--ink)] [paint-order:stroke_fill]">
-              0{i + 1}
-            </p>
-            <p className="font-mono text-sm font-semibold text-accent-ink">{job.period}</p>
-            <p className="mt-1 font-mono text-xs text-dim">{job.place}</p>
-            {i === 0 && (
-              <span className="mt-3 inline-block rounded-full border-2 border-line bg-mint px-2.5 py-0.5 font-mono text-[0.68rem] font-bold text-[#17182c]">
-                current
-              </span>
-            )}
-          </div>
-          <div>
-            <h3 className="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{job.company}</h3>
-            <p className="font-medium text-ink">{job.role}</p>
-            <p className="mt-3 leading-relaxed">{job.summary}</p>
-            <Bullets items={job.points} />
-            <ul className="mt-5 flex flex-wrap gap-2">
-              {job.stack.map((s) => (
-                <Pill key={s}>{s}</Pill>
-              ))}
-            </ul>
-          </div>
-        </article>
-      </Reveal>
-    </li>
-  )
-}
-
 export function Experience() {
+  const { t } = useLang()
   return (
     <section id="experience" className={`${shell} bg-bg-2/60`}>
       <div className={inner}>
-        <SectionHead num="02" kicker="Experience" title="Where I've shipped" />
-        <ol className="space-y-8 sm:space-y-10">
-          {jobs.map((job, i) => (
-            <ExperienceCard key={job.company} job={job} i={i} />
+        <SectionHead num="01" kicker={t.sections.experience[0]} title={t.sections.experience[1]} />
+        <ol className="grid gap-5 lg:grid-cols-3">
+          {t.jobs.map((job, i) => (
+            <li key={job.company}>
+              <Reveal delay={i * 0.07} className="h-full">
+                <article className="sticker flex h-full flex-col rounded-2xl p-5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <p className="font-mono text-xs font-semibold text-accent-ink">{job.period}</p>
+                    {i === 0 && (
+                      <span className="rounded-full border-2 border-line bg-mint px-2 py-px font-mono text-[0.65rem] font-bold text-[#17182c]">{t.current}</span>
+                    )}
+                  </div>
+                  <h3 className="mt-1.5 font-display text-2xl font-extrabold tracking-tight text-ink">{job.company}</h3>
+                  <p className="text-sm font-medium text-ink">
+                    {job.role} <span className="font-normal text-dim">· {job.place}</span>
+                  </p>
+                  <p className="mt-2 text-sm leading-snug">{job.summary}</p>
+                  <Bullets items={job.points} />
+                  <ul className="mt-auto flex flex-wrap gap-1.5 pt-4">
+                    {job.stack.map((s) => (
+                      <Pill key={s}>{s}</Pill>
+                    ))}
+                  </ul>
+                </article>
+              </Reveal>
+            </li>
           ))}
         </ol>
-        <Reveal className="mt-12">
+        <Reveal className="mt-6">
           <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="btn">
-            Full profile on LinkedIn <ArrowUpRight className="h-4 w-4" />
+            {t.linkedin} <ArrowUpRight className="h-4 w-4" />
           </a>
         </Reveal>
       </div>
@@ -283,77 +99,73 @@ export function Experience() {
   )
 }
 
-/* Projects */
-
-// Cover = the GitHub social preview of the repo, refreshed at build time by scripts/fetch-previews.mjs
-
-function Cover({ repo }: { repo: string }) {
-  return (
-    <div className="relative aspect-[2/1] overflow-hidden lg:aspect-auto lg:h-full rounded-3xl border-2 border-line bg-white shadow-[6px_6px_0_0_var(--shadow)]">
-      <img
-        src={asset(`/images/project-${repo.toLowerCase()}.png`)}
-        alt=""
-        width={1280}
-        height={640}
-        loading="lazy"
-        className="h-full w-full object-cover lg:object-contain"
-      />
-    </div>
-  )
-}
+/* Projects. Cover = the GitHub social preview of the repo, refreshed at build time by scripts/fetch-previews.mjs */
 
 export function Projects() {
+  const { t } = useLang()
   return (
     <section id="projects" className={shell}>
       <div className={inner}>
-        <SectionHead num="03" kicker="Projects" title="Things I've built" />
-        <div className="space-y-24 sm:space-y-32">
-          {featured.map((p, i) => (
-            <article key={p.name} className="grid items-stretch gap-10 lg:grid-cols-2 lg:gap-20">
-              <Reveal className={`h-full ${i % 2 ? "lg:order-2" : ""}`}>
-                <a href={`https://github.com/PauLopNun/${p.repo}`} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on GitHub`} className="block h-full rounded-3xl">
-                  <Cover repo={p.repo} />
-                </a>
+        <SectionHead num="02" kicker={t.sections.projects[0]} title={t.sections.projects[1]} />
+        <div className="grid gap-5 lg:grid-cols-3">
+          {t.projects.map((p, i) => {
+            const { repo, links } = projectLinks[i]
+            return (
+              <Reveal key={repo} delay={i * 0.07} className="h-full">
+                <article className="sticker flex h-full flex-col overflow-hidden rounded-2xl">
+                  <a href={`${profile.github}/${repo}`} target="_blank" rel="noopener noreferrer" aria-label={`${projectNames[i]} on GitHub`} className="block border-b-2 border-line bg-white">
+                    <img
+                      src={asset(`/images/project-${repo.toLowerCase()}.png`)}
+                      alt=""
+                      width={1280}
+                      height={640}
+                      loading="lazy"
+                      className="aspect-[2/1] w-full object-cover"
+                    />
+                  </a>
+                  <div className="flex flex-1 flex-col p-5">
+                    <p className="font-mono text-xs text-dim">{p.context}</p>
+                    <h3 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-ink">
+                      {projectNames[i]}
+                      <span className="text-accent-ink">.</span>
+                    </h3>
+                    <p className="mt-2 text-sm leading-snug">{p.summary}</p>
+                    <Bullets items={p.points} />
+                    <ul className="mt-4 flex flex-wrap gap-1.5">
+                      {projectStacks[i].map((s) => (
+                        <Pill key={s}>{s}</Pill>
+                      ))}
+                    </ul>
+                    <div className="mt-auto flex flex-wrap gap-2 pt-5">
+                      {p.links.map((label, k) => (
+                        <a key={label} href={links[k]} target="_blank" rel="noopener noreferrer" className={`btn !px-4 !py-1.5 !text-sm ${k === 0 ? "btn-accent" : ""}`}>
+                          {label} <ArrowUpRight className="h-3.5 w-3.5" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </article>
               </Reveal>
-              <Reveal delay={0.1} className="flex flex-col justify-center">
-                <p className="font-mono text-sm text-dim max-lg:order-2 max-lg:mt-2">{p.context}</p>
-                <h3 className="mt-1 font-display max-lg:order-1 max-lg:mt-0 text-4xl font-extrabold tracking-tight text-ink">
-                  {p.name}
-                  <span className="text-accent-ink">.</span>
-                </h3>
-                <p className="mt-3 text-base leading-snug max-lg:order-3">{p.summary}</p>
-                <div className="max-lg:order-3"><Bullets items={p.points} compact /></div>
-                <ul className="mt-4 flex flex-wrap gap-1.5 max-lg:order-3">
-                  {p.stack.map((s) => (
-                    <Pill key={s}>{s}</Pill>
-                  ))}
-                </ul>
-                <div className="mt-6 flex flex-wrap gap-3 max-lg:order-3">
-                  {p.links.map((l, k) => (
-                    <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className={`btn ${k === 0 ? "btn-accent" : ""}`}>
-                      {l.label} <ArrowUpRight className="h-4 w-4" />
-                    </a>
-                  ))}
-                </div>
-              </Reveal>
-            </article>
-          ))}
+            )
+          })}
         </div>
 
-        <Reveal className="mt-32">
-          <h3 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">More on GitHub</h3>
+        <Reveal className="mt-10">
+          <h3 className="font-display text-2xl font-extrabold tracking-tight text-ink">{t.moreTitle}</h3>
         </Reveal>
-        <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {moreProjects.map((p, i) => (
             <li key={p.name}>
-              <Reveal delay={(i % 3) * 0.07} className="h-full">
-                <a href={p.href} target="_blank" rel="noopener noreferrer" className="group sticker sticker-hover flex h-full flex-col rounded-2xl p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <Github className="h-6 w-6 text-ink" aria-hidden />
-                    <ArrowUpRight className="h-5 w-5 text-dim transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent-ink" aria-hidden />
-                  </div>
-                  <span className="mt-4 font-display text-xl font-bold text-ink">{p.name}</span>
-                  <span className="mt-1 text-sm leading-relaxed">{p.text}</span>
+              <Reveal delay={(i % 3) * 0.05} className="h-full">
+                <a href={p.href} target="_blank" rel="noopener noreferrer" className="group sticker sticker-hover flex h-full gap-3 rounded-xl !shadow-[4px_4px_0_0_var(--shadow)] p-4">
+                  <Github className="mt-0.5 h-5 w-5 shrink-0 text-ink" aria-hidden />
+                  <span>
+                    <span className="flex items-center gap-1 font-display text-base font-bold text-ink">
+                      {p.name}
+                      <ArrowUpRight className="h-4 w-4 text-dim transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent-ink" aria-hidden />
+                    </span>
+                    <span className="mt-0.5 block text-[0.82rem] leading-snug">{t.more[i]}</span>
+                  </span>
                 </a>
               </Reveal>
             </li>
@@ -366,89 +178,46 @@ export function Projects() {
 
 /* Stack */
 
-function ToolChip({ t, plain }: { t: { name: string; icon?: string }; plain?: boolean }) {
+function ToolChip({ name, icon }: { name: string; icon?: string }) {
   return (
-    <span className="flex shrink-0 items-center gap-2 rounded-xl border-2 border-line bg-chip px-3.5 py-2 text-base font-semibold text-[#17182c] shadow-[3px_3px_0_0_var(--shadow)]">
-      {plain ? null : t.icon ? (
-        <img src={asset(`/icons/${t.icon}.svg`)} alt="" width={22} height={22} className="h-[22px] w-[22px] object-contain" />
+    <li className="flex items-center gap-1.5 rounded-lg border-2 border-line bg-chip px-2.5 py-1 text-sm font-semibold text-[#17182c] shadow-[2px_2px_0_0_var(--shadow)]">
+      {icon ? (
+        <img src={asset(`/icons/${icon}.svg`)} alt="" width={18} height={18} className="h-[18px] w-[18px] object-contain" />
       ) : (
-        <span className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-sun font-mono text-[0.6rem] font-bold">{t.name.slice(0, 2)}</span>
+        <span className="flex h-[18px] w-[18px] items-center justify-center rounded bg-sun font-mono text-[0.55rem] font-bold">{name.slice(0, 2)}</span>
       )}
-      {t.name}
-    </span>
-  )
-}
-
-/* An endless row: drifts at a constant speed, stops under the cursor. */
-function MarqueeRow({ area, tools, reverse, plain }: { area: string; tools: { name: string; icon?: string }[]; reverse: boolean; plain?: boolean }) {
-  const x = useMotionValue(0)
-  const half = useRef<HTMLDivElement>(null)
-  const box = useRef<HTMLDivElement>(null)
-  const visible = useInView(box) // off screen rows do not animate
-  const hold = useRef(false)
-  const { motion: m } = useMotionPref()
-
-  useAnimationFrame((_, delta) => {
-    if (m === 'off' || !visible || !half.current) return
-    const w = half.current.offsetWidth
-    if (!w) return
-    const speed = hold.current ? 0 : 0.035 // constant: scrolling the page does not change it
-    let next = x.get() + (reverse ? 1 : -1) * speed * delta
-    if (next <= -w) next += w
-    if (next > 0) next -= w
-    x.set(next)
-  })
-
-  // the repeated copies exist only for the endless loop: hidden from screen readers
-  const row = (ref?: React.Ref<HTMLDivElement>) => (
-    <div ref={ref} aria-hidden={ref ? undefined : true} className="flex shrink-0 gap-4 pr-4">
-      {tools.map((t) => (
-        <ToolChip key={t.name} t={t} plain={plain} />
-      ))}
-    </div>
-  )
-
-  // Same left edge for the title and the first chip; each category is one straight line.
-  const title = <h3 className="mb-3 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{area}</h3>
-
-  if (m === 'off')
-    return (
-      <div>
-        {title}
-        <ul className="flex gap-4 overflow-x-auto pb-4 pr-1 pt-1">
-          {tools.map((t) => (
-            <li key={t.name} className="shrink-0">
-              <ToolChip t={t} plain={plain} />
-            </li>
-          ))}
-        </ul>
-      </div>
-    )
-
-  return (
-    <div ref={box} onPointerEnter={() => (hold.current = true)} onPointerLeave={() => (hold.current = false)}>
-      {title}
-      <div className="overflow-hidden pb-4 pt-1 [mask-image:linear-gradient(to_right,transparent,#000_3%,#000_97%,transparent)]">
-        <motion.div style={{ x }} className="flex w-max">
-          {row(half)}
-          {row()}
-          {row()}
-        </motion.div>
-      </div>
-    </div>
+      {name}
+    </li>
   )
 }
 
 export function Stack() {
+  const { t } = useLang()
   return (
-    <section id="stack" className="relative overflow-hidden bg-bg-2/60 px-6 py-20 sm:px-12 sm:py-36 lg:px-20">
-      <div className="mx-auto max-w-7xl">
-        <SectionHead num="04" kicker="Stack" title="Tools I reach for" />
-        <div className="space-y-5">
+    <section id="stack" className={`${shell} bg-bg-2/60`}>
+      <div className={inner}>
+        <SectionHead num="03" kicker={t.sections.stack[0]} title={t.sections.stack[1]} />
+        <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
           {stack.map((g, i) => (
-            <MarqueeRow key={g.area} area={g.area} tools={g.tools} reverse={i % 2 === 1} />
+            <Reveal key={i} delay={(i % 2) * 0.06}>
+              <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{t.stackAreas[i]}</h3>
+              <ul className="flex flex-wrap gap-2">
+                {g.tools.map((tool) => (
+                  <ToolChip key={tool.name} name={tool.name} icon={tool.icon} />
+                ))}
+              </ul>
+            </Reveal>
           ))}
-          <MarqueeRow area="How I work" tools={practices.map((name) => ({ name }))} reverse={stack.length % 2 === 1} plain />
+          <Reveal>
+            <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{t.practicesTitle}</h3>
+            <ul className="flex flex-wrap gap-2">
+              {t.practices.map((p) => (
+                <li key={p} className="rounded-lg border-2 border-line bg-sun px-2.5 py-1 text-sm font-semibold text-[#17182c]">
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
         </div>
       </div>
     </section>
@@ -458,20 +227,21 @@ export function Stack() {
 /* Education */
 
 export function Education() {
+  const { t } = useLang()
   return (
     <section id="education" className={shell}>
       <div className={inner}>
-        <SectionHead num="05" kicker="Education" title="Always learning" />
-        <div className="grid gap-6 lg:grid-cols-3">
-          {education.map((e, i) => (
-            <Reveal key={e.title} delay={i * 0.08}>
-              <div className="sticker sticker-hover flex h-full flex-col rounded-3xl p-6">
-                <p className="font-mono text-sm font-semibold text-accent-ink">{e.period}</p>
-                <h3 className="mt-3 font-display text-2xl font-extrabold leading-tight tracking-tight text-ink">{e.title}</h3>
-                <p className="mt-1 font-medium text-ink">{e.place}</p>
-                <p className="mt-3 text-[0.95rem] leading-relaxed">{e.note}</p>
-                {e.href && (
-                  <a href={e.href} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex items-center gap-1 pt-4 font-semibold text-ink underline decoration-accent decoration-2 underline-offset-4 hover:text-accent-ink">
+        <SectionHead num="04" kicker={t.sections.education[0]} title={t.sections.education[1]} />
+        <div className="grid gap-5 lg:grid-cols-3">
+          {t.education.map((e, i) => (
+            <Reveal key={e.title} delay={i * 0.07} className="h-full">
+              <div className="sticker flex h-full flex-col rounded-2xl p-5">
+                <p className="font-mono text-xs font-semibold text-accent-ink">{e.period}</p>
+                <h3 className="mt-1.5 font-display text-xl font-extrabold leading-tight tracking-tight text-ink">{e.title}</h3>
+                <p className="text-sm font-medium text-ink">{e.place}</p>
+                <p className="mt-2 text-sm leading-snug">{e.note}</p>
+                {educationLinks[i] && (
+                  <a href={educationLinks[i]} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex items-center gap-1 pt-3 text-sm font-semibold text-ink underline decoration-accent decoration-2 underline-offset-4 hover:text-accent-ink">
                     {e.linkLabel} <ArrowUpRight className="h-4 w-4" />
                   </a>
                 )}
@@ -480,16 +250,17 @@ export function Education() {
           ))}
         </div>
 
-        <Reveal className="mt-24">
-          <h3 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Certificates</h3>
+        <Reveal className="mt-10">
+          <h3 className="font-display text-2xl font-extrabold tracking-tight text-ink">{t.certsTitle}</h3>
         </Reveal>
-        <div className="mt-8 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
           {certificates.map((g, gi) => (
-            <Reveal key={g.group} delay={gi * 0.06}>
-              <h4 className="border-b-2 border-line pb-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{g.group}</h4>
-              <ul className="mt-4 space-y-4">
+            <Reveal key={gi} delay={gi * 0.05}>
+              <h4 className="border-b-2 border-line pb-1.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-accent-ink">{t.certGroups[gi]}</h4>
+              <ul className="mt-3 space-y-2.5">
                 {g.items.map((c) => (
-                  <li key={c.name} className="text-sm leading-snug">
+                  // certificate titles are proper names, some in Spanish: they stay as issued
+                  <li key={c.name} className="text-[0.82rem] leading-snug">
                     {c.href ? (
                       <a href={c.href} target="_blank" rel="noopener noreferrer" className="group font-semibold text-ink hover:text-accent-ink">
                         {c.name}
@@ -516,62 +287,50 @@ export function Education() {
 /* Contact */
 
 export function Contact() {
+  const { t } = useLang()
   const [copied, setCopied] = useState(false)
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(profile.email)
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
-    } catch {}
+    } catch {
+      /* clipboard can be blocked; the address is visible anyway */
+    }
   }
 
   return (
-    <section id="contact" className="relative overflow-hidden px-6 pb-16 pt-28 sm:px-12 sm:pt-36 lg:px-20">
-      <div className={`${inner} relative`}>
+    <section id="contact" className="relative bg-bg-2/60 px-4 pb-8 pt-12 sm:px-8 sm:pt-16">
+      <div className={inner}>
         <Reveal>
           <p className="font-mono text-sm text-accent-ink">
-            06 <span className="text-dim">/ Contact</span>
+            05 <span className="text-dim">/ {t.sections.contact[0]}</span>
           </p>
-          <h2 className="mt-4 font-display text-[clamp(3rem,10vw,8.5rem)] font-extrabold leading-[0.9] tracking-[-0.045em] text-ink">
-            Let&apos;s build
-            <br />
-            <span className="outline-text">something</span> <span className="display-shadow">solid.</span>
+          <h2 className="mt-1 font-display text-[clamp(2.2rem,5.5vw,4rem)] font-extrabold leading-[0.95] tracking-[-0.04em] text-ink">
+            <span className="display-shadow">{t.sections.contact[1]}</span>
           </h2>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <p className="mt-8 max-w-xl text-lg leading-relaxed">
-            I&apos;m open to backend roles and interesting projects. Drop me a line.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center gap-4">
-            <a href={`mailto:${profile.email}`} className="btn btn-accent max-w-full !px-4 !py-4 !text-sm min-[360px]:!px-6 min-[360px]:!text-base sm:!text-lg">
+          <p className="mt-4 max-w-xl text-lg leading-relaxed">{t.contact.text}</p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <a href={`mailto:${profile.email}`} className="btn btn-accent max-w-full !text-sm sm:!text-base">
               <Mail className="h-5 w-5" /> {profile.email}
             </a>
-            <button type="button" onClick={copy} className="btn !py-4" aria-live="polite">
+            <button type="button" onClick={copy} className="btn" aria-live="polite">
               {copied ? <Check className="h-4 w-4 text-mint-ink" /> : <Copy className="h-4 w-4" />}
-              {copied ? "Copied" : "Copy"}
+              {copied ? t.contact.copied : t.contact.copy}
             </button>
-            <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="btn !p-4" aria-label="LinkedIn">
+            <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="btn !p-3" aria-label="LinkedIn">
               <Linkedin className="h-5 w-5" />
             </a>
-            <a href={profile.github} target="_blank" rel="noopener noreferrer" className="btn !p-4" aria-label="GitHub">
+            <a href={profile.github} target="_blank" rel="noopener noreferrer" className="btn !p-3" aria-label="GitHub">
               <Github className="h-5 w-5" />
             </a>
           </div>
         </Reveal>
 
-        <footer className="mt-32 flex flex-col justify-between gap-4 border-t-2 border-line pt-6 font-mono text-xs text-dim sm:flex-row">
-          <p>Designed and built by Pau López Núñez · React, Three.js, Tailwind CSS and Framer Motion.</p>
-          <a
-            href="#top"
-            onClick={(e) => {
-              // a direct jump: a long smooth scroll back through the pinned hero cannot keep the 3D portrait in sync
-              e.preventDefault()
-              window.scrollTo({ top: 0, behavior: "instant" })
-              history.replaceState(null, "", window.location.pathname + window.location.search)
-            }}
-            className="font-semibold text-ink hover:text-accent-ink"
-          >
-            Back to top ↑
+        <footer className="mt-12 flex flex-col justify-between gap-3 border-t-2 border-line pt-5 font-mono text-xs text-dim sm:flex-row">
+          <p>{t.footer}</p>
+          <a href="#top" className="font-semibold text-ink hover:text-accent-ink">
+            {t.top}
           </a>
         </footer>
       </div>

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" translate="no" class="notranslate scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,6 +8,8 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3eee4" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#11121f" />
     <meta name="color-scheme" content="light dark" />
+    <!-- The page has its own EN/ES switch. Browser auto-translation rewrites the text nodes React owns and breaks the page. -->
+    <meta name="google" content="notranslate" />
     <!-- Runs before paint so the page never flashes the wrong theme or motion setting. -->
     <script>
       (function () {

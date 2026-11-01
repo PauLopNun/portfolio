@@ -1,11 +1,11 @@
 # Portfolio
 
-Personal portfolio of Pau López Núñez, live at https://paulopnun.github.io/portfolio/. It keeps the design of the first version (now archived as [portfolio-v1](https://github.com/PauLopNun/portfolio-v1)) and adds a new hero: my photo is made of particles that dissolve and rebuild themselves as the GitHub logo while you scroll.
+Personal portfolio of Pau López Núñez, live at https://paulopnun.github.io/portfolio/. A compact, recruiter-friendly one-pager: who I am, quick links to GitHub and LinkedIn, experience, projects, stack and contact within a couple of screens. The earlier particle-portrait version is archived as [portfolio-v1](https://github.com/PauLopNun/portfolio-v1).
 
-- React 19, TypeScript, Vite, Tailwind CSS 4, Framer Motion (sections ported from the original)
-- Three.js for the hero only: one shader-driven particle system (portrait ⇄ GitHub mark), lazy-loaded, paused off screen, up to 3× pixel density
-- Light/dark themes (circle reveal), "Motion on/off" switch, `prefers-reduced-motion` respected (static portrait, no pinned scroll)
-- Layout follows the aspect ratio (phones, tablets, landscape)
+- React 19, TypeScript, Vite, Tailwind CSS 4, Framer Motion
+- English and Spanish (`src/content.ts`), chosen from the browser language and switchable in the header
+- Browser auto-translation is disabled (`translate="no"`): it rewrites text nodes React owns and breaks the page
+- Light/dark themes (circle reveal) and an Animations on/off switch
 
 ```bash
 npm install

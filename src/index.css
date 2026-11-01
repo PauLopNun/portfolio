@@ -71,6 +71,7 @@ html {
   background: var(--bg);
   color-scheme: light;
   scrollbar-gutter: stable;
+  scroll-padding-top: 6.5rem;
 }
 
 html.dark {

@@ -1,151 +1,101 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
-import { ArrowDown, ArrowUpRight, MapPin } from 'lucide-react'
-import { profile } from '../data'
-import { heroState } from '../heroState'
-import { useMotionPref, useTheme } from '../theme'
-
-// Three.js is only needed for the portrait scene, so it loads after the first paint.
-const Graph = lazy(() => import('./Graph'))
+import { motion } from "framer-motion"
+import { ArrowDown, ArrowUpRight, Github, Linkedin, Mail, MapPin } from "lucide-react"
+import { asset, profile } from "../data"
+import { useLang, useMotionPref, useTheme } from "../theme"
 
 const ease = [0.2, 0.8, 0.2, 1] as const
 
-function Line({ text, delay }: { text: string; delay: number }) {
-  const { motion: m } = useMotionPref()
-  return (
-    <span className="block overflow-hidden pb-[0.08em]">
-      <motion.span
-        className="block"
-        initial={m === 'on' ? { y: '110%', rotate: 4 } : false}
-        animate={{ y: 0, rotate: 0 }}
-        transition={{ delay, duration: 0.9, ease }}
-      >
-        {[...text].map((c, i) => (
-          <span key={i} className="inline-block transition-transform duration-200 ease-out hover:-translate-y-[0.06em] hover:-rotate-6">
-            {c === ' ' ? ' ' : c}
-          </span>
-        ))}
-      </motion.span>
-    </span>
-  )
-}
-
-function useMediaQuery(query: string) {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches)
-  useEffect(() => {
-    const mq = window.matchMedia(query)
-    const on = () => setMatches(mq.matches)
-    mq.addEventListener('change', on)
-    return () => mq.removeEventListener('change', on)
-  }, [query])
-  return matches
-}
+const links = [
+  { href: profile.github, label: "GitHub", Icon: Github },
+  { href: profile.linkedin, label: "LinkedIn", Icon: Linkedin },
+]
 
 export function Hero() {
-  const wrap = useRef<HTMLElement>(null)
-  const { motion: m } = useMotionPref()
+  const { t } = useLang()
   const { resolvedTheme } = useTheme()
-  const short = useMediaQuery('(max-height: 640px)') // phones held sideways or very small ones: no pinned scroll, the hero just scrolls
-  const tiny = useMediaQuery('(max-height: 640px) and (max-aspect-ratio: 1/1)') // small portrait phones: the portrait gets its own room above the text
-  const pinned = m === 'on' && !short
-
-  // While the hero is pinned, scroll progress (0 → 1) drives the portrait → GitHub mark morph.
-  const { scrollYProgress } = useScroll({ target: wrap, offset: ['start start', 'end end'] })
-  useMotionValueEvent(scrollYProgress, 'change', (v) => {
-    heroState.progress = pinned ? v : 0
-  })
-  useEffect(() => {
-    if (!pinned) heroState.progress = 0
-  }, [pinned])
-
-  const textOpacity = useTransform(scrollYProgress, [0.02, 0.1], [1, 0])
-  const portraitScreen = useMediaQuery('(orientation: portrait)') // text and portrait are stacked: the text must not travel up into the photo
-  const textY = useTransform(scrollYProgress, [0.02, 0.1], [0, portraitScreen ? 0 : -40])
-  const afterOpacity = useTransform(scrollYProgress, [0.7, 0.98], [0, 1])
-  const afterY = useTransform(scrollYProgress, [0.7, 0.98], [40, 0])
-  const afterVisibility = useTransform(scrollYProgress, (v) => (v > 0.7 ? 'visible' : 'hidden'))
+  const { motion: m } = useMotionPref()
+  const h = t.hero
 
   return (
-    <section id="top" ref={wrap} className={pinned ? 'relative h-[240svh]' : 'relative'}>
-      <div className={pinned ? 'sticky top-0 h-svh overflow-hidden' : 'relative min-h-svh overflow-hidden'}>
-        <Suspense fallback={null}>
-          <Graph key={`${resolvedTheme}-${m}`} dark={resolvedTheme === 'dark'} still={m === 'off'} />
-        </Suspense>
+    <section id="top" className="px-4 pb-14 pt-8 sm:px-8 sm:pb-20 sm:pt-12">
+      <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[1fr_auto] lg:gap-20">
+        <div className="flex flex-col justify-center">
+          <motion.p
+            initial={m === "on" ? { opacity: 0, y: 10 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease }}
+            className="inline-flex items-center gap-2 self-start rounded-full border-2 border-line bg-card px-3 py-1 font-mono text-xs font-semibold text-ink"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint opacity-70" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-mint" />
+            </span>
+            {h.status}
+          </motion.p>
+
+          <h1 className="mt-5 font-display text-[clamp(2.6rem,6.2vw,5.25rem)] font-extrabold leading-[0.92] tracking-[-0.04em] text-ink">
+            <motion.span initial={m === "on" ? { opacity: 0, y: 24 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease, delay: 0.05 }} className="block">
+              {h.hi}
+            </motion.span>
+            <motion.span initial={m === "on" ? { opacity: 0, y: 24 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease, delay: 0.15 }} className="display-shadow block">
+              Pau López.
+            </motion.span>
+          </h1>
+
+          <motion.div initial={m === "on" ? { opacity: 0, y: 16 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease, delay: 0.3 }}>
+            <p className="mt-5 max-w-xl text-lg leading-relaxed sm:text-xl">
+              <span className="font-display text-xl font-extrabold text-ink sm:text-2xl">{h.role}.</span> {h.pitch[0]}
+              <span className="inline-block -rotate-1 rounded-md bg-sun px-1.5 font-semibold text-[#17182c]">{h.pitch[1]}</span>
+              {h.pitch[2]}
+            </p>
+            <ul className="mt-4 space-y-1 font-mono text-sm text-dim">
+              <li className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 shrink-0" aria-hidden /> {h.place}
+              </li>
+            </ul>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <a href={`mailto:${profile.email}`} className="btn btn-accent">
+                <Mail className="h-4 w-4" /> {h.email}
+              </a>
+              <a href="#projects" className="btn">
+                {h.projects} <ArrowDown className="h-4 w-4" />
+              </a>
+            </div>
+          </motion.div>
+        </div>
 
         <motion.div
-          style={pinned ? { opacity: textOpacity, y: textY } : undefined}
-          className={`relative z-10 flex items-end px-6 pb-14 sm:px-12 landscape:items-center lg:px-20 landscape:pb-0 ${pinned ? 'h-full' : 'min-h-svh'} ${tiny ? 'pt-[360px]' : 'pt-28'}`}
+          initial={m === "on" ? { opacity: 0, y: 24 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease, delay: 0.2 }}
+          className="flex flex-col items-center gap-8 lg:mr-6"
         >
-          <div className="mx-auto grid w-full max-w-7xl items-center landscape:grid-cols-[1.05fr_1fr]">
-            <div className="relative" data-hero-block>
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease }}
-                className="inline-flex items-center gap-2 rounded-full border-2 border-line bg-card px-3 py-1 font-mono text-xs font-semibold text-ink"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint opacity-70" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-mint" />
-                </span>
-                Open to new opportunities
-              </motion.p>
-
-              <h1 className="mt-6 [@media(max-height:720px)]:mt-4 font-display text-[clamp(2.9rem,7.4vw,7.75rem)] [@media(max-height:720px)]:text-[2.5rem] font-extrabold leading-[0.88] tracking-[-0.04em] text-ink">
-                <Line text="Hi, I'm" delay={0.1} />
-                <span className="display-shadow block">
-                  <span className="whitespace-nowrap">
-                    <Line text="Pau López." delay={0.22} />
-                  </span>
-                </span>
-              </h1>
-
-              <motion.div initial={{ y: 20 }} animate={{ y: 0 }} transition={{ delay: 0.3, duration: 0.7, ease }}>
-                <p className="mt-8 [@media(max-height:720px)]:mt-5 max-w-lg text-lg leading-relaxed [@media(max-height:720px)]:text-base sm:text-xl [@media(max-height:720px)]:sm:text-lg">
-                  A{' '}
-                  <span className="inline-block -rotate-1 rounded-md bg-sun px-1.5 font-semibold text-[#17182c]">backend developer</span>{' '}
-                  who builds Java and Spring Boot services, wires them together with events and ships them to the cloud.
-                </p>
-                <p className="mt-4 [@media(max-height:720px)]:mt-2 flex items-center gap-2 font-mono text-sm text-dim">
-                  <MapPin className="h-4 w-4" aria-hidden /> València, Spain
-                </p>
-                <div className="mt-10 [@media(max-height:720px)]:mt-6 flex flex-wrap items-center gap-4">
-                  <a href="#projects" className="btn btn-accent">
-                    See my work <ArrowDown className="h-4 w-4" />
-                  </a>
-                  <a href="#contact" className="btn">
-                    Get in touch <ArrowUpRight className="h-4 w-4" />
-                  </a>
-                </div>
-              </motion.div>
+          <div className="relative h-48 w-48 sm:h-56 sm:w-56">
+            <div aria-hidden className="anim-orbit absolute -inset-3 rounded-full border-2 border-dashed border-accent" />
+            <div className="relative h-full w-full overflow-hidden rounded-full border-2 border-line bg-accent">
+              <div aria-hidden className="dots absolute inset-0 opacity-15" />
+              <img
+                src={asset(`/images/portrait-cut-${resolvedTheme}.webp`)}
+                alt="Pau López"
+                width={864}
+                height={864}
+                fetchPriority="high"
+                className="absolute bottom-0 left-1/2 h-[112%] w-auto max-w-none -translate-x-1/2 translate-y-[6%] select-none"
+                draggable={false}
+              />
             </div>
           </div>
-        </motion.div>
-
-        {pinned && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-start px-6 pt-[60svh] sm:px-12 landscape:items-center lg:px-20 landscape:pt-0">
-            <motion.div style={{ opacity: afterOpacity, y: afterY, visibility: afterVisibility }} className="pointer-events-auto mx-auto w-full max-w-7xl">
-              <p className="display-shadow max-w-[14ch] font-display text-[clamp(2.4rem,6vw,5.75rem)] font-extrabold leading-[0.95] tracking-[-0.04em] text-ink">
-                See the code on GitHub.
-              </p>
-              <a href={profile.github} target="_blank" rel="noopener noreferrer" className="btn btn-accent mt-8">
-                {profile.github.replace('https://', '')} <ArrowUpRight className="h-4 w-4" />
+          <div className="flex flex-wrap justify-center gap-3">
+            {links.map(({ href, label, Icon }) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="btn">
+                <Icon className="h-4 w-4" aria-hidden /> {label} <ArrowUpRight className="h-4 w-4" aria-hidden />
               </a>
-            </motion.div>
+            ))}
           </div>
-        )}
-
-        <motion.a
-          href="#about"
-          style={pinned ? { opacity: textOpacity } : undefined}
-          className="absolute bottom-8 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-3 font-mono text-[0.65rem] uppercase tracking-[0.35em] text-dim lg:flex"
-        >
-          Scroll
-          <span className="relative h-12 w-px overflow-hidden bg-line/20">
-            <span className="anim-scroll absolute inset-x-0 top-0 h-1/2 bg-accent" />
-          </span>
-        </motion.a>
+        </motion.div>
       </div>
+
     </section>
   )
 }
