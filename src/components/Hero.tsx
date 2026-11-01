@@ -32,7 +32,7 @@ export function Hero() {
           <motion.div initial={m === "on" ? { opacity: 0, y: 16 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease, delay: 0.3 }}>
             <p className="mt-5 max-w-xl text-lg leading-relaxed sm:text-xl">
               <span className="font-display text-xl font-extrabold text-ink sm:text-2xl">{h.role}.</span> {h.pitch[0]}
-              <span className="inline-block -rotate-1 rounded-md bg-sun px-1.5 font-semibold text-[#17182c]">{h.pitch[1]}</span>
+              <span className="inline-block -rotate-1 rounded-md bg-sun px-1.5 font-semibold text-[#1b1d36]">{h.pitch[1]}</span>
               {h.pitch[2]}
             </p>
             <ul className="mt-4 space-y-1 font-mono text-sm text-dim">

@@ -10,41 +10,41 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --bg: #f3eee4;
-  --bg-2: #e8e0d0;
-  --card: #fbf8f2;
-  --ink: #17182c;
-  --body: #3c3e58;
-  --dim: #5c5d75;
-  --line: #17182c;
-  --shadow: #17182c;
-  --accent: #ff5b2e;
-  --on-accent: #17182c;
-  --accent-ink: #b0320a;
-  --mint: #0f9e8c;
-  --mint-ink: #066a60;
-  --sun: #ffc53d;
+  --bg: #f5f3ee;
+  --bg-2: #eae7df;
+  --card: #fcfbf8;
+  --ink: #1b1d36;
+  --body: #41445f;
+  --dim: #5d6080;
+  --line: #1b1d36;
+  --shadow: #c3c6ea;
+  --accent: #4f46e5;
+  --on-accent: #ffffff;
+  --accent-ink: #4338ca;
+  --mint: #7fd8c8;
+  --mint-ink: #0f766e;
+  --sun: #f5dc96;
   --chip: #ffffff;
-  --portrait-bg: radial-gradient(circle at 50% 28%, #e3f5ef 0%, #a9ddd1 62%, #86c9bb 100%);
+  --portrait-bg: radial-gradient(circle at 50% 28%, #eceeff 0%, #c3c7f7 62%, #a8aef0 100%);
 }
 
 .dark {
-  --bg: #11121f;
-  --bg-2: #181a2c;
-  --card: #1a1c30;
-  --ink: #f3eee4;
-  --body: #c4c3d4;
-  --dim: #8d8ca6;
-  --line: #f3eee4;
-  --shadow: #ff6b3d;
-  --accent: #ff6b3d;
-  --on-accent: #11121f;
-  --accent-ink: #ff7d52;
-  --mint: #3dd6c0;
-  --mint-ink: #3dd6c0;
-  --sun: #ffd166;
-  --chip: #f7f3ec;
-  --portrait-bg: radial-gradient(circle at 50% 28%, #3d8a85 0%, #1f5655 62%, #163f40 100%);
+  --bg: #0e1022;
+  --bg-2: #151832;
+  --card: #1a1d3a;
+  --ink: #eeeefa;
+  --body: #c3c5de;
+  --dim: #8f92b5;
+  --line: #eeeefa;
+  --shadow: #343a85;
+  --accent: #7c83ff;
+  --on-accent: #0e1022;
+  --accent-ink: #a5aaff;
+  --mint: #4fd1c0;
+  --mint-ink: #5eead4;
+  --sun: #e9c46a;
+  --chip: #eef0fb;
+  --portrait-bg: radial-gradient(circle at 50% 28%, #4b52b8 0%, #2e3480 62%, #212668 100%);
 }
 
 @theme inline {
@@ -174,14 +174,6 @@ body {
 .btn-accent {
   background: var(--accent);
   color: var(--on-accent);
-}
-
-.dark .btn-accent {
-  box-shadow: 4px 4px 0 0 var(--line);
-}
-
-.dark .btn-accent:hover {
-  box-shadow: 6px 6px 0 0 var(--line);
 }
 
 

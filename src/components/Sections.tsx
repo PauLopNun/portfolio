@@ -70,7 +70,7 @@ export function Experience() {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <p className="font-mono text-xs font-semibold text-accent-ink">{job.period}</p>
                     {i === 0 && (
-                      <span className="rounded-full border-2 border-line bg-mint px-2 py-px font-mono text-[0.65rem] font-bold text-[#17182c]">{t.current}</span>
+                      <span className="rounded-full border-2 border-line bg-mint px-2 py-px font-mono text-[0.65rem] font-bold text-[#1b1d36]">{t.current}</span>
                     )}
                   </div>
                   <h3 className="mt-1.5 font-display text-2xl font-extrabold tracking-tight text-ink">{job.company}</h3>
@@ -180,7 +180,7 @@ export function Projects() {
 
 function ToolChip({ name, icon }: { name: string; icon?: string }) {
   return (
-    <li className="flex items-center gap-1.5 rounded-lg border-2 border-line bg-chip px-2.5 py-1 text-sm font-semibold text-[#17182c] shadow-[2px_2px_0_0_var(--shadow)]">
+    <li className="flex items-center gap-1.5 rounded-lg border-2 border-line bg-chip px-2.5 py-1 text-sm font-semibold text-[#1b1d36] shadow-[2px_2px_0_0_var(--shadow)]">
       {icon ? (
         <img src={asset(`/icons/${icon}.svg`)} alt="" width={18} height={18} className="h-[18px] w-[18px] object-contain" />
       ) : (
@@ -212,7 +212,7 @@ export function Stack() {
             <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent-ink">{t.practicesTitle}</h3>
             <ul className="flex flex-wrap gap-2">
               {t.practices.map((p) => (
-                <li key={p} className="rounded-lg border-2 border-line bg-sun px-2.5 py-1 text-sm font-semibold text-[#17182c]">
+                <li key={p} className="rounded-lg border-2 border-line bg-sun px-2.5 py-1 text-sm font-semibold text-[#1b1d36]">
                   {p}
                 </li>
               ))}
